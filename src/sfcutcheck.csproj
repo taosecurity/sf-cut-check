@@ -10,7 +10,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>SfCutCheck</RootNamespace>
     <AssemblyName>sfcutcheck</AssemblyName>
-    <Version>0.1.6</Version>
+    <Version>0.1.7</Version>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <ServerGarbageCollection>false</ServerGarbageCollection>
     <!-- Shown in the exe's file properties (Details tab). -->
@@ -35,7 +35,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Taosecurity.Starfield.BuildKit" Version="[0.2.0]" />
+    <PackageReference Include="Taosecurity.Starfield.BuildKit" Version="[0.3.1]" />
   </ItemGroup>
 
 </Project>

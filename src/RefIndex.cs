@@ -14,6 +14,7 @@ using BuildKit;
 using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Plugins.Aspects;
 using Mutagen.Bethesda.Plugins.Records;
+using Mutagen.Bethesda.Starfield;
 
 namespace SfCutCheck;
 
@@ -135,9 +136,24 @@ public sealed class RefIndex
         using var game = new GameData(dataDir, extraDirs);
         foreach (var p in plugins)
         {
+            if (!GameData.IsPlainPluginName(p))
+            {
+                ix.Skipped.Add(p);
+                progress($"\"{GameData.Printable(p)}\": not a plain plugin file name, skipped");
+                continue;
+            }
             var path = game.Locate(p);
             Log.Write($"plugin {p}: {(path == null ? "not found in the Data folder" : Log.Describe(path))}");
-            var mod = game.TryOpen(p);
+            IStarfieldModGetter? mod;
+            // BuildKit 0.3.1 refuses a plugin whose master list holds a path instead of a file name (security fix).
+            try { mod = game.TryOpen(p); }
+            catch (InvalidDataException e)
+            {
+                ix.Skipped.Add(p);
+                progress($"{p}: its master list is damaged or unsafe, skipped");
+                Log.Write($"skipped {p}: {e.Message}");
+                continue;
+            }
             if (mod == null)
             {
                 ix.Skipped.Add(p);

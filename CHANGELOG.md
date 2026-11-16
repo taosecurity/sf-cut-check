@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.7 (2026-11-16)
+
+Security and attribution release.
+
+- A plugin whose master list holds a path instead of a file name (a network path such as `\\server\share\x.esm`,
+  a drive or `..`) is refused with a clear message. Before this, checking such a crafted mod could make Windows
+  contact another computer and send the user's login hash. Built on BuildKit 0.3.1, which has the same check.
+- Text from plugins (EditorIDs, names) is printed with control characters shown as `\xNN`, so a mod can't hide
+  terminal escape codes in it.
+- The tool says who made it: one line on stderr at the start of each run, `--version` with credits, a byline and
+  credits on the report page, and the author in report.json and the exe's file properties.
+
 ## 0.1.6 (2026-11-11)
 
 First version.

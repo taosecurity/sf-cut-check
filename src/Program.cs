@@ -9,7 +9,7 @@ using System.Diagnostics;
 using Mutagen.Bethesda.Plugins;
 using SfCutCheck;
 
-const string Version = "0.1.6";
+const string Version = "0.1.7";
 const string DefaultData = @"C:\Program Files (x86)\Steam\steamapps\common\Starfield\Data";
 const string Usage =
     "usage:\n" +
@@ -22,6 +22,7 @@ const string Usage =
 // Attribution (user, 2026-11-11): one line on stderr at the start of every run, so stdout (the summary and RESULT)
 // stays the same for scripts; --version prints it with the credits.
 // Plain ASCII separators: older consoles (Windows PowerShell 5, cmd) can garble "·".
+SafeConsoleWriter.Install();   // plugin text never reaches the terminal raw (2026-11-16)
 var byline = $"sfcutcheck {Version} by {About.Author} - {About.License} - {About.Url}";
 if (args.Length == 1 && args[0] is "--version" or "-v")
 {
@@ -168,16 +169,31 @@ if (pluginPath != null)
     var order = new List<string>();
     var visiting = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     string? loop = null;
+    string? badMaster = null;
     void AddWithMasters(string name)
     {
         if (order.Contains(name, StringComparer.OrdinalIgnoreCase) || plugins.Contains(name, StringComparer.OrdinalIgnoreCase)) return;
         // A plugin that lists itself, or a circle of masters, would otherwise recurse forever (code review finding 3).
         if (!visiting.Add(name)) { loop ??= name; return; }
+        // A master name comes from the plugin file: anything but a plain file name (a network path such as
+        // \\server\share\x.esm, a drive or "..") is never looked up, or Windows would contact that server (0.1.7).
+        if (!BuildKit.GameData.IsPlainPluginName(name)) { badMaster ??= name; return; }
         var at = extraDirs.Append(data).Select(d => Path.Combine(d, name)).FirstOrDefault(File.Exists);
-        if (at != null) foreach (var m in BuildKit.GameData.HeaderMasters(at)) AddWithMasters(m);
+        if (at != null)
+        {
+            try { foreach (var m in BuildKit.GameData.HeaderMasters(at)) AddWithMasters(m); }
+            catch (InvalidDataException e) { badMaster ??= name; Log.Write($"stopped: {e.Message}"); return; }
+        }
         order.Add(name);
     }
     AddWithMasters(pluginName);
+    if (badMaster != null)
+    {
+        Console.Error.WriteLine($"{pluginName} (or one of its masters) lists a master \"{BuildKit.GameData.Printable(badMaster)}\" that is not a plain plugin " +
+                                "file name (Name.esm, .esp or .esl with no folder, drive or network path). The file is damaged or unsafe, so it was not read.");
+        Log.Write($"stopped: bad master name {BuildKit.GameData.Printable(badMaster)}");
+        return 2;
+    }
     if (loop != null)
     {
         Console.Error.WriteLine($"{loop} is its own master (directly or through its masters), so it can't be loaded. Fix its master list in the Creation Kit or xEdit.");
