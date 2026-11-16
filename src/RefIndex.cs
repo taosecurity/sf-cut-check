@@ -88,8 +88,12 @@ public sealed class RefIndex
 
     /// <summary>A record's links as ids, without repeats and without links to itself. Null if Mutagen failed. With
     /// checks != null, links that occur only inside the record's conditions go there instead.</summary>
-    HashSet<int>? LinksOf(IMajorRecordGetter r, string type, int self, bool record, HashSet<int>? checks = null)
+    HashSet<int>? LinksOf(IMajorRecordGetter r, string type, int self, bool record, HashSet<int>? checks = null) =>
+        LinksOf(r, type, self, record, checks, out _);
+
+    HashSet<int>? LinksOf(IMajorRecordGetter r, string type, int self, bool record, HashSet<int>? checks, out bool conditionsFailed)
     {
+        conditionsFailed = false;
         var total = new Dictionary<FormKey, int>();
         try
         {
@@ -105,7 +109,11 @@ public sealed class RefIndex
         if (checks != null)
         {
             try { inConditions = Conditions.LinkCounts(r); }
-            catch (Exception e) { if (record) Failed.Add((r.FormKey, type, $"conditions: {e.GetType().Name}: {e.Message}")); }
+            catch (Exception e)
+            {
+                conditionsFailed = true;
+                if (record) Failed.Add((r.FormKey, type, $"conditions: {e.GetType().Name}: {e.Message}"));
+            }
         }
         var set = new HashSet<int>();
         foreach (var (k, n) in total)
@@ -117,6 +125,29 @@ public sealed class RefIndex
             else set.Add(id);
         }
         return set;
+    }
+
+    // Link sets worked out for a record while its container was read, kept until the scan reaches the record itself.
+    // Mutagen lists a container before the records inside it, so an entry is normally used within the same container.
+    // Capped (CacheLimit links in all) so a huge worldspace can't hold millions of sets at once; past the cap a record
+    // is simply read again, as before 0.1.8.
+    const long CacheLimit = 8_000_000;
+    readonly Dictionary<FormKey, (HashSet<int> Links, HashSet<int> Checks)> cache = new();
+    long cachedLinks;
+    public long CacheHits, CacheMisses, CacheFull;
+
+    void Cache(FormKey key, HashSet<int> links, HashSet<int> checks)
+    {
+        long size = links.Count + checks.Count;
+        if (cachedLinks + size > CacheLimit) { CacheFull++; return; }
+        if (cache.TryAdd(key, (links, checks))) cachedLinks += size;
+    }
+
+    bool TakeCached(FormKey key, out (HashSet<int> Links, HashSet<int> Checks) value)
+    {
+        if (cache.Remove(key, out value)) { cachedLinks -= value.Links.Count + value.Checks.Count; CacheHits++; return true; }
+        CacheMisses++;
+        return false;
     }
 
     void Add(int from, int to, LinkKind kind, string type)
@@ -184,8 +215,17 @@ public sealed class RefIndex
 
                 // If Mutagen fails on the record's links (often because of one navmesh inside a cell), keep going with
                 // no links of its own, so the records inside it still get their "contains" links.
-                var checks = new HashSet<int>();
-                var own = ix.LinksOf(r, type, self, record: true, checks) ?? new HashSet<int>();
+                HashSet<int> checks, own;
+                if (ix.TakeCached(r.FormKey, out var cached))
+                {
+                    (own, checks) = cached;
+                    ix.CheckLinksFound += checks.Count;
+                }
+                else
+                {
+                    checks = new HashSet<int>();
+                    own = ix.LinksOf(r, type, self, record: true, checks) ?? new HashSet<int>();
+                }
 
                 if (r is IMajorRecordGetterEnumerable holder)
                 {
@@ -200,15 +240,40 @@ public sealed class RefIndex
                             var cid = ix.Id(c.FormKey);
                             insideIds.Add(cid);
                             own.Remove(cid);
-                            // Drop from the container only what the inner record really uses. A link the inner
-                            // record merely checks stays the container's own (step 3 fix, 2026-11-11: DialogueFCNeon's
-                            // script property for FFNeonZ08 was lost because its responses check FFNeonZ08).
-                            var childChecks = new HashSet<int>();
-                            var cl = ix.LinksOf(c, TypeName(c), cid, record: false, childChecks);
-                            if (cl != null) { own.ExceptWith(cl); checks.ExceptWith(cl); checks.ExceptWith(childChecks); }
                             if (c is IMajorRecordGetterEnumerable inner)
                                 foreach (var g in inner.EnumerateMajorRecords())
                                     if (g.FormKey != c.FormKey) deeper.Add(ix.Id(g.FormKey));
+                        }
+                        // Drop from the container only what the inner records really use. A link an inner record
+                        // merely checks stays the container's own (step 3 fix, 2026-11-11: DialogueFCNeon's script
+                        // property for FFNeonZ08 was lost because its responses check FFNeonZ08).
+                        // 0.1.8 (code review finding 10): only the records directly inside are read here, because
+                        // Mutagen gives a record the links of everything inside it too. Before, every record at any
+                        // depth was read again, so a placed reference was read about three times. What is read here
+                        // is kept for when the scan reaches that record itself (ix.Cache).
+                        foreach (var c in inside)
+                        {
+                            var cid = ix.Id(c.FormKey);
+                            if (deeper.Contains(cid)) continue;
+                            var childChecks = new HashSet<int>();
+                            var cl = ix.LinksOf(c, TypeName(c), cid, record: false, childChecks, out bool condFailed);
+                            if (cl != null)
+                            {
+                                own.ExceptWith(cl); checks.ExceptWith(cl); checks.ExceptWith(childChecks);
+                                if (!condFailed && !skipTypes.Contains(TypeName(c))) ix.Cache(c.FormKey, cl, childChecks);
+                            }
+                            else if (c is IMajorRecordGetterEnumerable failed)
+                            {
+                                // Mutagen failed on this record's links (often one navmesh in a cell): fall back to
+                                // the records inside it, one by one, as before.
+                                foreach (var g in failed.EnumerateMajorRecords())
+                                {
+                                    if (g.FormKey == c.FormKey) continue;
+                                    var gChecks = new HashSet<int>();
+                                    var gl = ix.LinksOf(g, TypeName(g), ix.Id(g.FormKey), record: false, gChecks);
+                                    if (gl != null) { own.ExceptWith(gl); checks.ExceptWith(gl); checks.ExceptWith(gChecks); }
+                                }
+                            }
                         }
                         foreach (var cid in insideIds)
                             if (!deeper.Contains(cid)) ix.Add(self, cid, LinkKind.Contains, type);
@@ -218,6 +283,8 @@ public sealed class RefIndex
                 foreach (var to in checks) if (!own.Contains(to)) ix.Add(self, to, LinkKind.Checks, type);
             }
             ix.VersionsRead += n;
+            // Left over: records the scan never reached on their own (should be none); free them per plugin.
+            if (ix.cache.Count > 0) { Log.Write($"link cache: {ix.cache.Count:N0} sets left unused after {p}"); ix.cache.Clear(); ix.cachedLinks = 0; }
             progress($"{p}: {n:N0} records, {ix.EdgeCount - before:N0} links");
             Log.Write($"read {p}: {n:N0} records, {ix.EdgeCount - before:N0} links; {ix.Failed.Count} records Mutagen failed on so far");
         }
@@ -233,6 +300,8 @@ public sealed class RefIndex
         foreach (var f in ix.Failed) Log.Write($"Mutagen failed on {f.Type} {f.Key}: {f.Error} (its own links are left out; see MUTAGEN-GAPS.md)");
         foreach (var g in ix.Roots.GroupBy(r => r.Rule)) Log.Write($"root rule {g.Key.Name}: {g.Count():N0} roots");
         Log.Write($"names read: {ix.Names.Count:N0}; unreadable: {ix.NameFailures}");
+        Log.Write($"link cache: {ix.CacheHits:N0} records read once instead of again, {ix.CacheMisses:N0} read on their own, " +
+                  $"{ix.CacheFull:N0} not kept (cap {CacheLimit:N0} links)");
         ix.DanglingCount = ix.To.LongCount(t => !ix.Defined.Contains(t));
         return ix;
     }

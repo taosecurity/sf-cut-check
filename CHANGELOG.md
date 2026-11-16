@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.8 (2026-11-16)
+
+Speed release. The results are the same as 0.1.7: on the official files both index 7,659,607 records and
+37,222,256 links and write identical reports.
+
+- A full scan reads each placed reference once less. A record that holds others (a worldspace, a cell, a quest)
+  is now compared only with the records directly inside it, and what was read there is reused when the scan
+  reaches those records (code review finding 10). The first scan of the official files went from 137 s to 127 s,
+  and its peak memory from 3.46 GB to 3.11 GB, on the author's PC.
+- The release's `.sha256` file has a plain line ending, so `sha256sum -c` works on Linux.
+
 ## 0.1.7 (2026-11-16)
 
 Security and attribution release.

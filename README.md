@@ -69,12 +69,12 @@ And checking one mod, the second time (the official scan is saved after the firs
 
 ## Install
 
-**Stand-alone exe (Windows 10 or 11, x64):** download `sfcutcheck-0.1.7-win-x64.zip` and its `.sha256` file from the
+**Stand-alone exe (Windows 10 or 11, x64):** download `sfcutcheck-0.1.8-win-x64.zip` and its `.sha256` file from the
 [releases page](https://github.com/taosecurity/sfcutcheck/releases), check the checksum, and unzip it anywhere:
 
-    certutil -hashfile sfcutcheck-0.1.7-win-x64.zip SHA256
+    certutil -hashfile sfcutcheck-0.1.8-win-x64.zip SHA256
     mkdir C:\Tools\sfcutcheck
-    tar -xf sfcutcheck-0.1.7-win-x64.zip -C C:\Tools\sfcutcheck
+    tar -xf sfcutcheck-0.1.8-win-x64.zip -C C:\Tools\sfcutcheck
     C:\Tools\sfcutcheck\sfcutcheck.exe --version
 
 Nothing else is needed: .NET is built into the exe.

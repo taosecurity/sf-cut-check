@@ -9,7 +9,7 @@ using System.Diagnostics;
 using Mutagen.Bethesda.Plugins;
 using SfCutCheck;
 
-const string Version = "0.1.7";
+const string Version = "0.1.8";
 const string DefaultData = @"C:\Program Files (x86)\Steam\steamapps\common\Starfield\Data";
 const string Usage =
     "usage:\n" +

@@ -1,7 +1,7 @@
 # sfcutcheck: instructions for AI assistants
 
 These steps are for an AI assistant (or anyone) helping a Starfield player or mod author use sfcutcheck. Every
-command here was run once on sfcutcheck 0.1.7 before release. The [README](README.md) has the full description.
+command here was run once on sfcutcheck 0.1.8 before release. The [README](README.md) has the full description.
 
 ## 1. What it is for
 
@@ -30,16 +30,16 @@ Don't use it:
 
 ## 3. Install
 
-Pick one. Files come from https://github.com/taosecurity/sfcutcheck/releases (version 0.1.7 shown here).
+Pick one. Files come from https://github.com/taosecurity/sfcutcheck/releases (version 0.1.8 shown here).
 
-1. **Stand-alone exe (Windows):** download `sfcutcheck-0.1.7-win-x64.zip` and its `.sha256` file, check the checksum,
+1. **Stand-alone exe (Windows):** download `sfcutcheck-0.1.8-win-x64.zip` and its `.sha256` file, check the checksum,
    and unzip it:
 
-       certutil -hashfile sfcutcheck-0.1.7-win-x64.zip SHA256
+       certutil -hashfile sfcutcheck-0.1.8-win-x64.zip SHA256
        mkdir C:\Tools\sfcutcheck
-       tar -xf sfcutcheck-0.1.7-win-x64.zip -C C:\Tools\sfcutcheck
+       tar -xf sfcutcheck-0.1.8-win-x64.zip -C C:\Tools\sfcutcheck
 
-   Compare the printed hash with the one in `sfcutcheck-0.1.7-win-x64.zip.sha256`. The program is then
+   Compare the printed hash with the one in `sfcutcheck-0.1.8-win-x64.zip.sha256`. The program is then
    `C:\Tools\sfcutcheck\sfcutcheck.exe`.
 
    The exe isn't code-signed, so the first run may show Windows SmartScreen's "Windows protected your PC"
@@ -60,7 +60,7 @@ Pick one. Files come from https://github.com/taosecurity/sfcutcheck/releases (ve
 
     sfcutcheck --version
 
-Its first line is `sfcutcheck 0.1.7 by Richard Bejtlich - GPL-3.0 - https://github.com/taosecurity/sfcutcheck`
+Its first line is `sfcutcheck 0.1.8 by Richard Bejtlich - GPL-3.0 - https://github.com/taosecurity/sfcutcheck`
 (two credit lines follow). Every other command prints that same first line on stderr. Then run the first real
 command (step 5.1) to prove it can read the game.
 
