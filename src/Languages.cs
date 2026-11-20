@@ -30,7 +30,7 @@ public static class Languages
 
     /// <summary>The language codes a plugin has string files for, loose or in its archives, in any of the folders.
     /// With <paramref name="want"/>, the search stops once that language is found, so the list can be short; when
-    /// it isn't found, every archive has been listed and the list is complete. Without it, a folder's other
+    /// it isn't found, every readable archive has been listed (unreadable ones are logged). Without it, a folder's other
     /// archives are skipped once its Localization archives held string files.</summary>
     public static SortedSet<string> Found(IEnumerable<string> dirs, string pluginFileName, string? want = null)
     {

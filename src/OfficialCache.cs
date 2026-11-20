@@ -45,8 +45,7 @@ public sealed class OfficialCache
     public static string DefaultDir =>
         Environment.GetEnvironmentVariable("SF_CUT_CHECK_CACHE_DIR") is { Length: > 0 } d ? d
         : Environment.GetEnvironmentVariable("SFCUTCHECK_CACHE_DIR") is { Length: > 0 } old ? old
-        : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) is { Length: > 0 } appData
-            ? appData : Path.GetTempPath(), "sf-cut-check");   // never a relative folder in the current directory
+        : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "sf-cut-check");
 
     /// <summary>A note when 0.1.8's saved-scan folder is still there (0.1.9 review): its file is stale after the rename
     /// and the rules change, so the user may delete it. Null when there is nothing to say.</summary>
