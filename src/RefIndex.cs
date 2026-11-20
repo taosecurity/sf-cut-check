@@ -21,7 +21,7 @@ namespace SfCutCheck;
 
 /// <summary>Ref: a normal link. Contains: a record stored inside another. Owns: the reverse of an owner field.
 /// Checks: the link appears only in the record's conditions; the walk doesn't follow it.
-/// In: from a placed reference to the interior cell it's in (relay step 3a, 2026-11-20): a reached reference (the target
+/// In: from a placed reference to the interior cell it's in (0.1.9, 2026-11-20): a reached reference (the target
 /// of a door, a quest alias) leads into its cell. Not counted as "something links to it" for Orphaned.</summary>
 public enum LinkKind : byte { Ref = 0, Contains = 1, Owns = 2, Checks = 3, In = 4 }
 
@@ -64,7 +64,7 @@ public sealed class RefIndex
     // A cell's linked references (Cell.LinkedReferences): a ship's instance cell names its placed ship this way.
     readonly List<(int Cell, int Reference)> cellLinkedRefs = new();
     public int InteriorLinkedRefLinks;
-    /// <summary>Form lists whose AddToList names another list (relay step 4): each version counts once.</summary>
+    /// <summary>Form lists whose AddToList names another list (0.1.9): each version counts once.</summary>
     public int AddToListLinks;
     public long VersionsRead { get; private set; }
     public long DanglingCount { get; private set; }
@@ -227,7 +227,7 @@ public sealed class RefIndex
                 {
                     try
                     {
-                        // --language (relay step 6): another language comes from the same string lookup Mutagen opened
+                        // --language (0.1.9): another language comes from the same string lookup Mutagen opened
                         // for the plugin; a plugin with no strings in that language (or a record with no translation)
                         // keeps its English name, counted per plugin and logged.
                         if (language == Language.English) { if (named.Name is { Length: > 0 } nm) ix.Names[self] = nm; }
@@ -354,7 +354,7 @@ public sealed class RefIndex
 
     /// <summary>Worldspaces are roots: "world" normally, "dev-world" when their EditorID marks them as test, debug or cut
     /// content. Interior cells (cells no worldspace holds) whose EditorID marks them as developer content stay
-    /// "dev-world" roots, as before. Every other interior cell is no root any more (relay step 3a, 2026-11-20): it's
+    /// "dev-world" roots, as before. Every other interior cell is no root any more (0.1.9, 2026-11-20): it's
     /// reached only through links. Two ways in are added here: each placed reference directly inside the cell links
     /// to it ("in"), so a reached reference (a door's teleport target, a quest alias, a location's persistent
     /// references) leads into its cell; and the cell's location links to it ("owns"). Direct links to the cell (a script

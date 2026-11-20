@@ -104,6 +104,13 @@ A **hint** appears when an EditorID carries a word Bethesda uses for unfinished 
   the editor used.
 - **Scripts aren't read.** A record that a script fetches by its ID looks unused. The tool reads script
   *properties*, which covers most scripted content, but not every case.
+- **Cells the engine picks show as unused.** An interior cell counts only when a door, a location, a quest alias, a
+  ship or another record leads into it. About 20 official cells are loaded by the engine or matched by keyword, with
+  no record pointing at them, so they come out Orphaned or Unreferenced although the game uses them. Known ones:
+  `TargetingRangeGalaxy`, `ShipInfoHangar01`, `ShipInfoHangar02`, `ShipInfoHangarSpace01`, `sCGravJumpTargetCell`,
+  `sscEmptyCell`, `ShipVendorContainerCell`, `scGen01`, and space cells such as `scMQ106`, `scMQ302`,
+  `scMS0401` to `scMS0403`, `scRL064`, `scSEKMK01`, `scSESC03`, `scUCR03DebrisFieldLVC01`, `scPOI043` and
+  `scPOIAF001`. A later release may list them as starting points.
 - **Nothing in your game changes.** sf-cut-check only reads files. Cut content doesn't slow your game or cause bugs
   by being there.
 

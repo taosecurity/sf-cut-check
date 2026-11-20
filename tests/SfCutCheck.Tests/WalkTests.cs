@@ -60,7 +60,7 @@ public sealed class WalkTests : IDisposable
             quest.DialogConditions.Add(new ConditionFloat { Data = data });
         }
         // A leveled list only checked, holding a weapon nothing else uses: both Maybe, and the weapon's reason names the
-        // checked list and the quest that checks it (relay step 2, 2026-11-20).
+        // checked list and the quest that checks it (0.1.9, 2026-11-20).
         var inList = W("SCT_WeaponInCheckedList");
         var checkedList = mod.LeveledItems.AddNew("SCT_ListChecked");
         checkedList.Entries = new ExtendedList<LeveledItemEntry> { new LeveledItemEntry { Reference = inList.ToLink<IItemGetter>(), Count = 1, Level = 1 } };
@@ -106,7 +106,7 @@ public sealed class WalkTests : IDisposable
         recipe.CreatedObject.SetTo(made.FormKey);
         keys["SCT_Recipe"] = recipe.FormKey;
 
-        // Relay step 4 (2026-11-20): a list whose AddToList names another list joins that list, so whatever reaches
+        // 0.1.9 (2026-11-20): a list whose AddToList names another list joins that list, so whatever reaches
         // the target reaches it (the DLC's SFBGS006AddToList_SMSSet_* ship module lists work this way).
         var recipeList = mod.FormLists.AddNew("SCT_RecipeList");
         var recipe2 = mod.ConstructibleObjects.AddNew("SCT_RecipeOfList");
@@ -121,7 +121,7 @@ public sealed class WalkTests : IDisposable
         foreach (var l in new[] { recipeList, addToRecipe, scriptList, addToScript }) keys[l.EditorID!] = l.FormKey;
         keys["SCT_RecipeOfList"] = recipe2.FormKey;
 
-        // Interior cells (relay step 3a, 2026-11-20): none is a root by itself except the dev cell.
+        // Interior cells (0.1.9, 2026-11-20): none is a root by itself except the dev cell.
         var placed = W("SCT_WeaponPlaced");
         var dev = W("SCT_WeaponDev");
         var cell = new Cell(mod) { EditorID = "SCT_Cell" };

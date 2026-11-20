@@ -1,4 +1,4 @@
-// --language (0.1.9 relay step 6, 2026-11-20): codes, finding string files, the exit-2 messages, and names read in
+// --language (0.1.9, 2026-11-20): codes, finding string files, the exit-2 messages, and names read in
 // another language, all on made-up files in a temp folder (no game files).
 using BuildKit;
 using Mutagen.Bethesda;

@@ -1,4 +1,4 @@
-// --language (0.1.9 relay step 6, 2026-11-20): which language the in-game names in the reports, `why` and `find` come
+// --language (0.1.9, 2026-11-20): which language the in-game names in the reports, `why` and `find` come
 // from. The codes are the ones in the game's string file names (Starfield_de.STRINGS) and Mutagen's ISO codes for its
 // Language enum (StringsUtility.GetIsoLanguageString); Mutagen's enum names (German) work too.
 // A localized plugin keeps its strings in Data\Strings\<plugin>_<code>.STRINGS (.DLSTRINGS, .ILSTRINGS), or inside one

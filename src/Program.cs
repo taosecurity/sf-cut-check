@@ -438,9 +438,9 @@ int Find(Walk w)
             var quota = Math.Max(1, (max - shown) / (groups.Count - gi));
             foreach (var h in groups[gi].Take(Math.Min(quota, max - shown)))
             {
-                // Maybe and DevOnly rows name their rule and its record, as in the reports (relay step 2,
+                // Maybe and DevOnly rows name their rule and its record, as in the reports (0.1.9,
                 // 2026-11-20: find showed only "Maybe", not that the record is only checked, or by what).
-                // The in-game name in quotes, in the --language language (relay step 6, 2026-11-20).
+                // The in-game name in quotes, in the --language language (0.1.9, 2026-11-20).
                 Console.WriteLine($"    {h.V,-12} {ix.TypeOf(h.Id),-22} {ix.KeyOf(h.Id),-28} {h.Edid}" +
                     (ix.NameOf(h.Id) is { } nm ? $" \"{nm}\"" : "") +
                     (h.V is Verdict.Maybe or Verdict.DevOnly ? $"  ({w.ReasonText(h.Id)})" : ""));
@@ -471,9 +471,9 @@ int Why(Walk w, string what)
 
     var v = w.VerdictOf(id);
     Console.WriteLine($"{ix.Describe(id)}");
-    if (ix.NameOf(id) is { } inGame) Console.WriteLine($"name: {inGame}");   // in the --language language (relay step 6)
+    if (ix.NameOf(id) is { } inGame) Console.WriteLine($"name: {inGame}");   // in the --language language (0.1.9)
     Console.WriteLine($"verdict: {v}");
-    // The same short reason as the reports (relay step 2, 2026-11-20: `why` showed the checked-only rule but not
+    // The same short reason as the reports (0.1.9, 2026-11-20: `why` showed the checked-only rule but not
     // which record checks it, except by reading the path).
     if (v != Verdict.Reached) Console.WriteLine($"reason: {w.ReasonText(id)}");
     if (Rules.Hint(ix.EditorIdOf(id)) is { } hint) Console.WriteLine($"hint: EditorID contains \"{hint}\"");
@@ -488,7 +488,7 @@ int Why(Walk w, string what)
         for (var i = 1; i < path.Count; i++)
             Console.WriteLine($"    {new string(' ', Math.Min(i, 12) * 2)}-{KindWord(w.KindBetween(path[i - 1], path[i]))}-> {ix.Describe(path[i])}");
     }
-    // Links from outside first: an interior cell's own references ("in") would otherwise fill the list (relay step 3b).
+    // Links from outside first: an interior cell's own references ("in") would otherwise fill the list (0.1.9).
     var inbound = w.Inbound(id).OrderBy(x => x.Kind == LinkKind.In ? 1 : 0).ToList();
     var inboundRecords = inbound.Select(x => x.From).Distinct().Count();
     Console.WriteLine($"linked from {inboundRecords:N0} record(s){(inbound.Count > 20 ? " (first 20 links)" : "")}:");

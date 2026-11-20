@@ -139,7 +139,7 @@ public sealed class Walk
     }
 
     /// <summary>The records that link to this one from outside it: without "in" links and without links from the
-    /// records it holds directly, for cells (relay step 3b, 2026-11-20: a cell's navmeshes link back to their cell, which made
+    /// records it holds directly, for cells (0.1.9, 2026-11-20: a cell's navmeshes link back to their cell, which made
     /// cells nothing leads to Orphaned). Used for Orphaned and the reports' linked-from list.</summary>
     public IEnumerable<(int From, LinkKind Kind)> InboundFromOutside(int id)
     {
@@ -178,7 +178,7 @@ public sealed class Walk
 
     /// <summary>For a record whose rule is checked-only: the record on its path that a running record only checks
     /// (the record itself, or one it's reached through) and the record that checks it. Null otherwise.
-    /// Relay step 2, 2026-11-20: the report named the record's own predecessor as the checker, which is wrong for a
+    /// 0.1.9, 2026-11-20: the report named the record's own predecessor as the checker, which is wrong for a
     /// record reached through a checked one (a spell's effects were "checked by" the spell that lists them).</summary>
     public (int Checked, int Checker)? CheckedBy(int id)
     {
