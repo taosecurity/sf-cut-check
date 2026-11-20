@@ -230,6 +230,7 @@ if (pluginPath != null)
             officialCache = OfficialCache.FromWalk(new Walk(officialIndex), data, officialList);
             officialCache.Save(cacheDir, officialList);
             Console.Error.WriteLine($"  {sw.Elapsed.TotalSeconds,6:F1}s official scan done and saved; now reading {pluginName}");
+            if (OfficialCache.OldDirNote() is { } oldNote) { Console.Error.WriteLine(oldNote); Log.Write(oldNote); }
         }
         else
         {
@@ -275,7 +276,10 @@ Console.Error.WriteLine($"  {sw.Elapsed.TotalSeconds,6:F1}s walk done");
 Log.Write($"walk done at {sw.Elapsed.TotalSeconds:F1} s");
 // A plain scan of exactly the official files also saves the result for later --plugin runs.
 if (command == "scan" && pluginName == null && !noCache && !args.Contains("--plugins") && skip.Count == 0)
+{
     OfficialCache.FromWalk(walk, data, plugins).Save(OfficialCache.DefaultDir, plugins);
+    if (OfficialCache.OldDirNote() is { } oldNote) { Console.Error.WriteLine(oldNote); Log.Write(oldNote); }
+}
 if (command == "scan") return Scan(walk);
 if (command == "find") return Find(walk);
 var worst = 0;
@@ -490,8 +494,11 @@ int Why(Walk w, string what)
     }
     // Links from outside first: an interior cell's own references ("in") would otherwise fill the list (0.1.9).
     var inbound = w.Inbound(id).OrderBy(x => x.Kind == LinkKind.In ? 1 : 0).ToList();
-    var inboundRecords = inbound.Select(x => x.From).Distinct().Count();
-    Console.WriteLine($"linked from {inboundRecords:N0} record(s){(inbound.Count > 20 ? " (first 20 links)" : "")}:");
+    // The count matches the reports and the verdict: records inside a cell (its references, its navmeshes) aren't
+    // counted, but they're still listed after the outside links (0.1.9 review).
+    var inboundRecords = w.InboundFromOutside(id).Select(x => x.From).Distinct().Count();
+    var insideRecords = inbound.Select(x => x.From).Distinct().Count() - inboundRecords;
+    Console.WriteLine($"linked from {inboundRecords:N0} record(s){(insideRecords > 0 ? $", plus {insideRecords:N0} inside it" : "")}{(inbound.Count > 20 ? " (first 20 links)" : "")}:");
     foreach (var (from, kind) in inbound.Take(20))
         Console.WriteLine($"    {KindWord(kind),-8} {ix.Describe(from)}  [{w.VerdictOf(from)}]");
     if (ix.TypeOf(id) == "Cell")

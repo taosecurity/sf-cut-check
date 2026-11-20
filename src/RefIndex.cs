@@ -213,6 +213,9 @@ public sealed class RefIndex
             }
             ix.PluginsRead.Add(p);
             long n = 0, before = ix.EdgeCount, fallbacks = 0, translated = 0;
+            // A plugin that isn't localized keeps its names in the record, in whatever language its author wrote, so
+            // its names aren't counted as "kept in English" (0.1.9 review).
+            var localized = mod.UsingLocalization;
             foreach (var r in mod.EnumerateMajorRecords())
             {
                 var type = TypeName(r);
@@ -232,14 +235,16 @@ public sealed class RefIndex
                         // keeps its English name, counted per plugin and logged.
                         if (language == Language.English) { if (named.Name is { Length: > 0 } nm) ix.Names[self] = nm; }
                         else if (r is ITranslatedNamedGetter { Name: { } ts } && ts.TryLookup(language, out var tr) && tr is { Length: > 0 }) { ix.Names[self] = tr; translated++; }
-                        else if (named.Name is { Length: > 0 } nmEn) { ix.Names[self] = nmEn; fallbacks++; }
+                        else if (named.Name is { Length: > 0 } nmEn) { ix.Names[self] = nmEn; if (localized) fallbacks++; }
                     }
                     catch (Exception e) { ix.NameFailures++; if (ix.NameFailures <= 5) Log.Write($"name of {r.FormKey} ({type}) unreadable: {e.GetType().Name}: {e.Message}"); }
                 }
                 if (Rules.RootOf(r) is { } rule) ix.Roots.Add((self, rule));
                 if (r is ICellGetter cellRec)
                 {
-                    if (!cellRec.Location.IsNull) ix.cellLocations.Add((self, ix.Id(cellRec.Location.FormKey)));
+                    // A cell Mutagen can't read must not stop the scan (0.1.9 review): log it and go on.
+                    try { if (!cellRec.Location.IsNull) ix.cellLocations.Add((self, ix.Id(cellRec.Location.FormKey))); }
+                    catch (Exception e) { Log.Write($"location of cell {r.FormKey} unreadable: {e.GetType().Name}: {e.Message}"); }
                     // A ship's instance cells name the placed ship they belong to (linked references with the keywords
                     // SpaceshipLinkedInterior / SpaceshipLinkedExterior): the placed ship leads into them (step 3b).
                     try

@@ -47,6 +47,15 @@ public sealed class OfficialCache
         : Environment.GetEnvironmentVariable("SFCUTCHECK_CACHE_DIR") is { Length: > 0 } old ? old
         : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "sf-cut-check");
 
+    /// <summary>A note when 0.1.8's saved-scan folder is still there (0.1.9 review): its file is stale after the rename
+    /// and the rules change, so the user may delete it. Null when there is nothing to say.</summary>
+    public static string? OldDirNote()
+    {
+        var old = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "sfcutcheck");
+        if (!Directory.Exists(old) || string.Equals(Path.GetFullPath(old).TrimEnd('\\', '/'), Path.GetFullPath(DefaultDir).TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase)) return null;
+        return $"note: the saved scan of older versions in {old} isn't used any more; you can delete that folder.";
+    }
+
     /// <summary>The key for the official plugins as they are on disk now.</summary>
     public static string KeyFor(string dataDir, IReadOnlyList<string> officialPlugins)
     {

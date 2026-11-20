@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.9
+## 0.1.9 (2026-11-20)
 
 New name and accuracy release. The tool is now **sf-cut-check** (`sf-cut-check.exe`, repo
 `github.com/taosecurity/sf-cut-check`).
@@ -46,6 +46,18 @@ New and changed output:
   list to a form list that adds to it as `owns`.
 - `find` shows each record's in-game name in quotes after its EditorID, and the reason at the end of Maybe and
   DevOnly rows.
+- `why` counts "linked from" the same way as the reports and the verdict: for a cell, the records inside it are
+  counted separately ("plus N inside it").
+- RESULTS.md lists the known engine-picked cells that show as not used.
+
+Fixes from the release review:
+
+- A cell whose location field Mutagen can't read no longer stops the whole scan; it's logged and skipped.
+- `--language`: names in a plugin that isn't localized aren't counted as "kept in English"; string files are found
+  without regard to case (Linux, Proton); the Localization archive is listed first, so the check no longer opens
+  every archive.
+- When the old `%LOCALAPPDATA%\sfcutcheck` folder is still there, a scan that saves its result says it can be
+  deleted.
 
 ## 0.1.8 (2026-11-16)
 
