@@ -55,8 +55,8 @@ Fixes from the release review:
 - A cell whose location or linked references Mutagen can't read no longer stops the whole scan; it comes out
   CannotCheck, and the first few are logged.
 - `--language`: names in a plugin that isn't localized aren't counted as "kept in English"; string files are found
-  without regard to case (Linux, Proton); the Localization archive is listed first, so the check no longer opens
-  every archive.
+  without regard to case (Linux, Proton); the Localization archive is listed first, and the other archives are
+  opened only while the chosen language hasn't been found.
 - When the old `%LOCALAPPDATA%\sfcutcheck` folder is still there, a scan that saves its result says it can be
   deleted.
 
