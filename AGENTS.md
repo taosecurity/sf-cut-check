@@ -16,7 +16,7 @@ Use it:
 - to explain why one record is or isn't used (`why`).
 
 Don't use it:
-- to check a plugin for errors (use a plugin checker such as sfmodcheck or xEdit's Check for Errors);
+- to check a plugin for errors (use a plugin checker such as sf-mod-check or xEdit's Check for Errors);
 - to find conflicts between mods;
 - to fix or clean a plugin (it never changes files);
 - for games other than Starfield.
