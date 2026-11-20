@@ -536,7 +536,8 @@ static int Spike(RefIndex ix, Stopwatch sw)
     Console.WriteLine($"failed to enumerate: {ix.Failed.Count}");
     foreach (var f in ix.Failed) Console.WriteLine($"    {f.Type} {f.Key}: {f.Error}");
     Console.WriteLine($"cells with an unreadable location or linked references: {ix.CellFieldFailedIds.Count} ({ix.CellFieldFailures} field reads)");
-    foreach (var c in ix.CellFieldFailedIds.Take(20)) Console.WriteLine($"    {ix.Describe(c)}");
+    foreach (var c in ix.CellFieldFailedIds.OrderBy(c => ix.KeyOf(c).ToString()).Take(20)) Console.WriteLine($"    {ix.Describe(c)}");
+    if (ix.CellFieldFailedIds.Count > 20) Console.WriteLine($"    ... and {ix.CellFieldFailedIds.Count - 20} more");
     Console.WriteLine($"time: {sw.Elapsed.TotalSeconds:F1} s; managed heap: {GC.GetTotalMemory(true) / 1e9:F2} GB; peak working set: {proc.PeakWorkingSet64 / 1e9:F2} GB");
     Console.WriteLine("links to records no plugin defines, by source type (top 10), with 3 examples each:");
     // FormIDs below 0x800 in Starfield.esm are the engine's own hard-coded forms (PlayerRef, built-in actor values):
