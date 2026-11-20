@@ -1,29 +1,29 @@
-// sfcutcheck: read-only finder of Starfield records the game can never reach.
-//   sfcutcheck scan  [common options] [--plugin <file.esm>] [--types Weapon,Armor] [--all-types] [--out <folder>]
-//   sfcutcheck why   <FormID:Plugin.esm | EditorID> [more...] [common options]
-//   sfcutcheck find  <text> [more...] [--word] [--types ...] [--max N] [common options]
-//   sfcutcheck spike [common options] [--skip Type,Type]     (index size, time and memory)
-//   common options: --data <Data folder>  --plugins a.esm,b.esm  --verbose  --log <file>
+// sf-cut-check: read-only finder of Starfield records the game can never reach.
+//   sf-cut-check scan  [common options] [--plugin <file.esm>] [--types Weapon,Armor] [--all-types] [--out <folder>]
+//   sf-cut-check why   <FormID:Plugin.esm | EditorID> [more...] [common options]
+//   sf-cut-check find  <text> [more...] [--word] [--types ...] [--max N] [common options]
+//   sf-cut-check spike [common options] [--skip Type,Type]     (index size, time and memory)
+//   common options: --data <Data folder>  --plugins a.esm,b.esm  --language <code>  --verbose  --log <file>
 // Exit codes: 0 done; 1 why found nothing for a record, or --plugin found records nothing reaches; 2 can't run (bad option, no Data folder, can't write).
 using System.Diagnostics;
 using Mutagen.Bethesda.Plugins;
 using SfCutCheck;
 
-const string Version = "0.1.8";
+const string Version = "0.1.9";
 const string DefaultData = @"C:\Program Files (x86)\Steam\steamapps\common\Starfield\Data";
 const string Usage =
     "usage:\n" +
-    "  sfcutcheck scan [--data <Data folder>] [--plugins a.esm,b.esm | --plugin <file.esm> [--masters-dir <folder>]...] [--types Weapon,Armor] [--all-types] [--out <folder>] [--verbose] [--log <file>]\n" +
-    "  sfcutcheck why <FormID:Plugin.esm | EditorID> [more records...] [--data <Data folder>] [--plugins a.esm,b.esm] [--verbose] [--log <file>]\n" +
-    "  sfcutcheck find <text> [more...] [--word] [--types Weapon,Armor] [--max N] [--data ...] [--plugins ...] [--verbose] [--log <file>]\n" +
-    "  sfcutcheck spike [--data <Data folder>] [--plugins a.esm,b.esm] [--skip Type,Type]\n" +
-    "  sfcutcheck --version";
+    "  sf-cut-check scan [--data <Data folder>] [--plugins a.esm,b.esm | --plugin <file.esm> [--masters-dir <folder>]...] [--types Weapon,Armor] [--all-types] [--out <folder>] [--language <code>] [--verbose] [--log <file>]\n" +
+    "  sf-cut-check why <FormID:Plugin.esm | EditorID> [more records...] [--data <Data folder>] [--plugins a.esm,b.esm] [--language <code>] [--verbose] [--log <file>]\n" +
+    "  sf-cut-check find <text> [more...] [--word] [--types Weapon,Armor] [--max N] [--data ...] [--plugins ...] [--language <code>] [--verbose] [--log <file>]\n" +
+    "  sf-cut-check spike [--data <Data folder>] [--plugins a.esm,b.esm] [--skip Type,Type]\n" +
+    "  sf-cut-check --version";
 
 // Attribution (user, 2026-11-11): one line on stderr at the start of every run, so stdout (the summary and RESULT)
 // stays the same for scripts; --version prints it with the credits.
 // Plain ASCII separators: older consoles (Windows PowerShell 5, cmd) can garble "·".
 SafeConsoleWriter.Install();   // plugin text never reaches the terminal raw (2026-11-16)
-var byline = $"sfcutcheck {Version} by {About.Author} - {About.License} - {About.Url}";
+var byline = $"sf-cut-check {Version} by {About.Author} - {About.License} - {About.Url}";
 if (args.Length == 1 && args[0] is "--version" or "-v")
 {
     Console.WriteLine(byline);
@@ -51,11 +51,13 @@ var extraDirs = new List<string>();   // --masters-dir folders, then --plugin's 
 var dataGiven = false;
 var noCache = false;                 // --no-cache: --plugin reads the official files again instead of the saved scan
 OfficialCache? officialCache = null;
+string? languageArg = null;          // --language <code>: in-game names in this language (en when not given)
+var language = Mutagen.Bethesda.Strings.Language.English;
 try { return Run(); }
 catch (Exception e)
 {
     Log.Write($"stopped: {e}");
-    Console.Error.WriteLine($"sfcutcheck stopped: {e.GetType().Name}: {e.Message}");
+    Console.Error.WriteLine($"sf-cut-check stopped: {e.GetType().Name}: {e.Message}");
     Console.Error.WriteLine("Run again with --log <file> and send that file with a bug report; it has the full error.");
     return 2;
 }
@@ -89,6 +91,7 @@ for (var i = 1; i < args.Length; i++)
             if (!int.TryParse(Next(), out max) || max < 1) { Console.Error.WriteLine("--max needs a whole number, 1 or more (for example --max 40)"); return 2; }
             break;
         case "--out": outDir = Next(); break;
+        case "--language": languageArg = Next(); break;
         default:
             if (command is "why" or "find" && !args[i].StartsWith("--")) { targets.Add(args[i]); break; }
             Console.Error.WriteLine($"unknown option {args[i]}\n{Usage}");
@@ -99,7 +102,7 @@ if (command == "why" && targets.Count == 0) { Console.Error.WriteLine($"why need
 if (command == "find" && targets.Count == 0) { Console.Error.WriteLine($"find needs some text to look for in EditorIDs\n{Usage}"); return 2; }
 
 Console.Error.WriteLine(byline);
-Log.Write($"sfcutcheck {Version}, command {command}, arguments: {string.Join(" ", args)}");
+Log.Write($"sf-cut-check {Version}, command {command}, arguments: {string.Join(" ", args)}");
 var dataWhy = dataGiven ? "from --data" : "Steam's usual folder, no --data given";
 if (!dataGiven && !File.Exists(Path.Combine(data, "Starfield.esm")))
 {
@@ -132,11 +135,18 @@ if (!File.Exists(Path.Combine(data, "Starfield.esm")))
     return 2;
 }
 Log.Write($"Starfield.esm: {Log.Describe(Path.Combine(data, "Starfield.esm"))}");
+if (Languages.Check(languageArg, [data], "Starfield.esm", out language) is { } languageError)
+{
+    Console.Error.WriteLine(languageError);
+    Log.Write($"stopped: {languageError}");
+    return 2;
+}
+Log.Write($"in-game names in {language} ({Languages.CodeOf(language)}){(languageArg == null ? ", the default (no --language given)" : ", from --language")}");
 
 if (command == "scan")
 {
     // Fail early, before the 2-minute read, if the reports can't be written.
-    try { Directory.CreateDirectory(outDir); var probe = Path.Combine(outDir, ".sfcutcheck-write-test"); File.WriteAllText(probe, ""); File.Delete(probe); }
+    try { Directory.CreateDirectory(outDir); var probe = Path.Combine(outDir, ".sf-cut-check-write-test"); File.WriteAllText(probe, ""); File.Delete(probe); }
     catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
     {
         Console.Error.WriteLine($"can't write the reports to {Path.GetFullPath(outDir)}: {e.Message} Give --out a folder you can write to, such as one in your Documents folder.");
@@ -240,7 +250,10 @@ Log.Write($"plugins to read ({(args.Contains("--plugins") ? "from --plugins" : o
 sw.Restart();
 if (officialCache == null)
     Console.Error.WriteLine($"reading {plugins.Count} plugins from {data} (about 2 minutes for the whole official set)...");
-var index = RefIndex.Build(data, plugins, skip, msg => Console.Error.WriteLine($"  {sw.Elapsed.TotalSeconds,6:F1}s {msg}"), extraDirs);
+var index = RefIndex.Build(data, plugins, skip, msg => Console.Error.WriteLine($"  {sw.Elapsed.TotalSeconds,6:F1}s {msg}"), extraDirs, language);
+if (index.EnglishNameFallbacks.Count > 0)
+    Console.Error.WriteLine($"  note: some in-game names stay in English, because these plugins have no {language} text for them: " +
+                            string.Join(", ", index.EnglishNameFallbacks.Select(kv => $"{kv.Key} ({kv.Value:N0})")));
 if (officialCache != null)
     Log.Write($"seeded {officialCache.SeedRoots(index):N0} official records from the saved scan");
 if (pluginName != null && !index.PluginsRead.Contains(pluginName, StringComparer.OrdinalIgnoreCase))
@@ -322,15 +335,9 @@ int Scan(Walk w)
     foreach (var (v, type, id) in rows.OrderBy(r => r.V).ThenBy(r => r.Type).ThenBy(r => ix.KeyOf(r.Id).ToString()))
     {
         // One entry per linking record (a quest that both contains and owns a topic is one record, not two).
-        var inbound = w.Inbound(id).GroupBy(x => x.From).Select(g => g.First()).ToList();
-        var p = w.PathTo(id);
-        var rule = w.ReasonOf(id);
-        var reason = rule == Rules.CheckedOnly && w.Pred[id] >= 0 ? $"checked-only: checked by {ix.Describe(w.Pred[id])}"
-            // Short, so the report's Why column stays readable; the rule's full meaning is in the legend (and the
-            // page's hover text). User's screenshot 2026-11-11: the long form squeezed the table.
-            : p.Count > 0 ? $"via {rule!.Name}: {ix.Describe(p[0])}"
-            : v == Verdict.CannotCheck ? "Mutagen couldn't read its links"
-            : inbound.Count == 0 ? "nothing links to it" : "only records the game never reaches link to it";
+        // A cell's own placed references ("in" links) and the records inside it aren't listed as linking records.
+        var inbound = w.InboundFromOutside(id).GroupBy(x => x.From).Select(g => g.First()).ToList();
+        var reason = w.ReasonText(id);
         var key = ix.KeyOf(id);
         reportRows.Add(new ReportRow(v.ToString(), type, key.ToString(), key.ModKey.FileName, ix.EditorIdOf(id), ix.NameOf(id),
             Rules.Hint(ix.EditorIdOf(id)), reason, inbound.Count, inbound.Take(3).Select(x => ix.Describe(x.From)).ToArray()));
@@ -381,15 +388,18 @@ int Scan(Walk w)
     checkedLines.Add(onlyTypes != null || allTypes
         ? $"The table lists the records the game doesn't reach strongly, limited to {filter}."
         : "The table lists the records the game doesn't reach strongly, limited to content record types. Structure such as placed references, navmeshes and keywords is left out.");
+    checkedLines.Add(ix.EnglishNameFallbacks.Count == 0
+        ? $"In-game names are in {language} (--language {Languages.CodeOf(language)})."
+        : $"In-game names are in {language} (--language {Languages.CodeOf(language)}), except where a plugin has no {language} text: {string.Join(", ", ix.EnglishNameFallbacks.Select(kv => $"{kv.Key} ({kv.Value:N0} names in English)"))}.");
     var secs = (int)Math.Round(total.Elapsed.TotalSeconds);
-    checkedLines.Add($"sfcutcheck {Version} made this report on {DateTime.UtcNow:yyyy-MM-dd} at {DateTime.UtcNow:HH:mm} UTC in {secs} second{(secs == 1 ? "" : "s")}.");
+    checkedLines.Add($"sf-cut-check {Version} made this report on {DateTime.UtcNow:yyyy-MM-dd} at {DateTime.UtcNow:HH:mm} UTC in {secs} second{(secs == 1 ? "" : "s")}.");
 
-    var run = new ReportRun("sfcutcheck", Version, DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm"), Path.GetFullPath(data),
+    var run = new ReportRun("sf-cut-check", Version, DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm"), Path.GetFullPath(data),
         ix.PluginsRead.ToArray(), ix.Skipped.ToArray(), ix.Defined.Count, w.LinkCount,
         verdictCounts.ToDictionary(kv => kv.Key.ToString(), kv => kv.Value), filter,
         Rules.All.Concat(ix.Roots.Select(x => x.Rule).Distinct().Except(Rules.All))
             .Select(r => (r.Name, r.Tier.ToString(), ix.Roots.Count(x => x.Rule == r), r.Means)).ToArray(),
-        pluginName ?? "Starfield's official files", checkedLines.ToArray(), result);
+        pluginName ?? "Starfield's official files", checkedLines.ToArray(), result, Languages.CodeOf(language));
     var files = Report.WriteAll(outDir, run, reportRows);
     Console.WriteLine();
     Console.WriteLine("reports:");
@@ -428,7 +438,12 @@ int Find(Walk w)
             var quota = Math.Max(1, (max - shown) / (groups.Count - gi));
             foreach (var h in groups[gi].Take(Math.Min(quota, max - shown)))
             {
-                Console.WriteLine($"    {h.V,-12} {ix.TypeOf(h.Id),-22} {ix.KeyOf(h.Id),-28} {h.Edid}");
+                // Maybe and DevOnly rows name their rule and its record, as in the reports (relay step 2,
+                // 2026-11-20: find showed only "Maybe", not that the record is only checked, or by what).
+                // The in-game name in quotes, in the --language language (relay step 6, 2026-11-20).
+                Console.WriteLine($"    {h.V,-12} {ix.TypeOf(h.Id),-22} {ix.KeyOf(h.Id),-28} {h.Edid}" +
+                    (ix.NameOf(h.Id) is { } nm ? $" \"{nm}\"" : "") +
+                    (h.V is Verdict.Maybe or Verdict.DevOnly ? $"  ({w.ReasonText(h.Id)})" : ""));
                 shown++;
             }
         }
@@ -456,7 +471,11 @@ int Why(Walk w, string what)
 
     var v = w.VerdictOf(id);
     Console.WriteLine($"{ix.Describe(id)}");
+    if (ix.NameOf(id) is { } inGame) Console.WriteLine($"name: {inGame}");   // in the --language language (relay step 6)
     Console.WriteLine($"verdict: {v}");
+    // The same short reason as the reports (relay step 2, 2026-11-20: `why` showed the checked-only rule but not
+    // which record checks it, except by reading the path).
+    if (v != Verdict.Reached) Console.WriteLine($"reason: {w.ReasonText(id)}");
     if (Rules.Hint(ix.EditorIdOf(id)) is { } hint) Console.WriteLine($"hint: EditorID contains \"{hint}\"");
     var path = w.PathTo(id);
     if (path.Count > 0)
@@ -469,11 +488,23 @@ int Why(Walk w, string what)
         for (var i = 1; i < path.Count; i++)
             Console.WriteLine($"    {new string(' ', Math.Min(i, 12) * 2)}-{KindWord(w.KindBetween(path[i - 1], path[i]))}-> {ix.Describe(path[i])}");
     }
-    var inbound = w.Inbound(id).ToList();
+    // Links from outside first: an interior cell's own references ("in") would otherwise fill the list (relay step 3b).
+    var inbound = w.Inbound(id).OrderBy(x => x.Kind == LinkKind.In ? 1 : 0).ToList();
     var inboundRecords = inbound.Select(x => x.From).Distinct().Count();
     Console.WriteLine($"linked from {inboundRecords:N0} record(s){(inbound.Count > 20 ? " (first 20 links)" : "")}:");
     foreach (var (from, kind) in inbound.Take(20))
         Console.WriteLine($"    {KindWord(kind),-8} {ix.Describe(from)}  [{w.VerdictOf(from)}]");
+    if (ix.TypeOf(id) == "Cell")
+    {
+        // A cell is reached through the references inside it too (a door's teleport target, a quest alias): list the
+        // records outside the cell that link to them.
+        var inside = w.Outbound(id).Where(x => x.Kind == LinkKind.Contains).Select(x => x.To).ToHashSet();
+        var into = inside.SelectMany(c => w.Inbound(c).Where(x => x.Kind != LinkKind.Contains && !inside.Contains(x.From) && x.From != id)
+            .Select(x => (Ref: c, x.From, x.Kind))).ToList();
+        Console.WriteLine($"links into the {inside.Count:N0} record(s) inside it from outside: {into.Count:N0}{(into.Count > 20 ? " (first 20)" : "")}");
+        foreach (var (r, from, kind) in into.OrderBy(x => w.VerdictOf(x.From)).Take(20))
+            Console.WriteLine($"    {KindWord(kind),-8} {ix.Describe(from)}  [{w.VerdictOf(from)}] -> {ix.Describe(r)}");
+    }
     var outbound = w.Outbound(id).ToList();
     Console.WriteLine($"links to {outbound.Select(x => x.To).Distinct().Count():N0} record(s){(outbound.Count > 20 ? " (first 20 links)" : "")}:");
     foreach (var (to, kind) in outbound.Take(20))
@@ -481,7 +512,7 @@ int Why(Walk w, string what)
     return 0;
 }
 
-static string KindWord(LinkKind k) => k switch { LinkKind.Contains => "contains", LinkKind.Owns => "owns", LinkKind.Checks => "checks", _ => "links" };
+static string KindWord(LinkKind k) => k switch { LinkKind.Contains => "contains", LinkKind.Owns => "owns", LinkKind.Checks => "checks", LinkKind.In => "in", _ => "links" };
 
 static bool TryKey(string s, out FormKey key) => FormIds.TryParse(s, out key);
 

@@ -17,7 +17,11 @@ public static class Rules
 {
     public static readonly RootRule StartGameQuest = new("start-game-quest", Tier.Strong, "a quest that starts when the game starts");
     public static readonly RootRule StoryManager = new("story-manager", Tier.Strong, "a story manager event node (the game runs these on events)");
-    public static readonly RootRule World = new("world", Tier.Strong, "a worldspace or interior cell that isn't developer content");
+    // Relay step 3a (2026-11-20): interior cells aren't roots by themselves any more. One is reached only when something
+    // leads to it: a placed reference inside it that's reached (a door whose teleport target is in the cell, a quest
+    // alias, a location's persistent references), the cell's own location, or a direct link (script property, pack-in,
+    // story manager...). See RefIndex.AddWorldRoots.
+    public static readonly RootRule World = new("world", Tier.Strong, "a worldspace that isn't developer content");
     public static readonly RootRule DefaultObjects = new("default-objects", Tier.Strong, "a default object (the engine looks these up by name)");
     public static readonly RootRule Galaxy = new("galaxy", Tier.Strong, "a star, planet or planet content tree");
     public static readonly RootRule Player = new("player", Tier.Strong, "the player character or the player reference");
@@ -84,6 +88,10 @@ public static class Rules
             case ILocationGetter l: yield return l.ParentLocation.FormKey; break;
             case IIdleAnimationGetter i: yield return i.ParentAnimation.FormKey; break;
             case ICameraPathGetter cp: yield return cp.Parent.FormKey; break;
+            // Relay step 4 (2026-11-20): a form list with AddToList joins the list it names (the DLCs add ship
+            // modules, help pages, outpost furniture and Starborn values to base-game lists this way), so the target
+            // list reaches it. Before, the 45 SFBGS006 hab lists came out Orphaned.
+            case IFormListGetter fl: yield return fl.AddToList.FormKey; break;
         }
     }
 

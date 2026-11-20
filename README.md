@@ -1,6 +1,6 @@
-# sfcutcheck
+# sf-cut-check
 
-**Find what Starfield never uses.** sfcutcheck reads the game's own plugins and tells you which records the player
+**Find what Starfield never uses.** sf-cut-check reads the game's own plugins and tells you which records the player
 can never meet: cut weapons, quests nothing starts, dialogue nobody says, items in lists nothing hands out. For each
 one it shows *why* it thinks so, with the chain of records behind the answer, not a made-up percentage.
 
@@ -15,7 +15,7 @@ It only reads. It never changes a plugin or any game file, and it never connects
 
 With Starfield installed through Steam in the usual place, run this in a terminal:
 
-    sfcutcheck scan
+    sf-cut-check scan
 
 It takes about 2 to 3 minutes and needs about 3 GB of free memory. When it's done, open `out\scan\report.html` in
 your browser. A summary is printed in the terminal as well.
@@ -27,37 +27,37 @@ If your game is somewhere else, add `--data` with its `Data` folder (see [Where 
 A full scan of the Steam version (November 2026), trimmed (`...` marks lines left out):
 
     reading 18 plugins from C:\Program Files (x86)\Steam\steamapps\common\Starfield\Data (about 2 minutes for the whole official set)...
-        79.8s Starfield.esm: 3,829,246 records, 14,126,274 links
-        91.4s BlueprintShips-Starfield.esm: 1,503,332 records, 9,518,206 links
+        75.1s Starfield.esm: 3,829,246 records, 14,126,274 links
+        86.9s BlueprintShips-Starfield.esm: 1,503,332 records, 9,518,206 links
         ...
-       137.2s walk done
-    records: 7,659,607; links: 37,154,337; roots: 30,501
+       128.3s walk done
+    records: 7,659,607; links: 41,810,130; roots: 13,794
         root rule start-game-quest   (Strong)      381  a quest that starts when the game starts
         root rule story-manager      (Strong)       20  a story manager event node (the game runs these on events)
-        root rule world              (Strong)   17,261  a worldspace or interior cell that isn't developer content
+        root rule world              (Strong)      554  a worldspace that isn't developer content
         ...
 
     all records by verdict:
-        Reached        7,478,997
-        Maybe              7,357
-        DevOnly          116,915
-        Orphaned           5,167
-        Unreferenced      51,171
+        Reached        6,861,715
+        Maybe            131,576
+        DevOnly          126,675
+        Orphaned         488,432
+        Unreferenced      51,209
 
-    reported (not Reached, content types only): 23,857
+    reported (not Reached, content types only): 25,020
         type                            Maybe  DevOnly  Orphaned    Unref  Cannot
         ConstructibleObject             3,398        0         0        0       0
-        PackIn                            396       88       503    1,896       0
-        Static                             35      191         4    2,583       0
-        Npc                                52        7       709      478       0
+        Static                            121      223       301    2,583       0
+        PackIn                            813      109       346    1,896       0
+        Npc                                56        9       715      478       0
         ...
-        ... and 105 more types (5,085 records): see report.html
+        ... and 105 more types (5,354 records): see report.html
 
     reports:
         ...\out\scan\report.csv
         ...\out\scan\report.json
         ...\out\scan\report.html
-    time: 138 s
+    time: 130 s
 
 And checking one mod, the second time (the official scan is saved after the first):
 
@@ -69,15 +69,21 @@ And checking one mod, the second time (the official scan is saved after the firs
 
 ## Install
 
-**Stand-alone exe (Windows 10 or 11, x64):** download `sfcutcheck-0.1.8-win-x64.zip` and its `.sha256` file from the
-[releases page](https://github.com/taosecurity/sfcutcheck/releases), check the checksum, and unzip it anywhere:
+**Stand-alone exe (Windows 10 or 11, x64):** download `sf-cut-check-0.1.9-win-x64.zip` and its `.sha256` file from the
+[releases page](https://github.com/taosecurity/sf-cut-check/releases), check the checksum, and unzip it anywhere:
 
-    certutil -hashfile sfcutcheck-0.1.8-win-x64.zip SHA256
-    mkdir C:\Tools\sfcutcheck
-    tar -xf sfcutcheck-0.1.8-win-x64.zip -C C:\Tools\sfcutcheck
-    C:\Tools\sfcutcheck\sfcutcheck.exe --version
+    certutil -hashfile sf-cut-check-0.1.9-win-x64.zip SHA256
+    mkdir C:\Tools\sf-cut-check
+    tar -xf sf-cut-check-0.1.9-win-x64.zip -C C:\Tools\sf-cut-check
+    C:\Tools\sf-cut-check\sf-cut-check.exe --version
 
 Nothing else is needed: .NET is built into the exe.
+
+**New name in 0.1.9.** The tool was called `sfcutcheck` up to 0.1.8. The zip still holds a small `sfcutcheck.cmd`
+that runs `sf-cut-check.exe` with the same arguments (and says the name changed), so old scripts keep working for
+this release; it goes away in the next one. The saved scan moved from `%LOCALAPPDATA%\sfcutcheck` to
+`%LOCALAPPDATA%\sf-cut-check` (the old folder can be deleted), and its environment variable is now
+`SF_CUT_CHECK_CACHE_DIR` (`SFCUTCHECK_CACHE_DIR` still works).
 
 **The exe isn't code-signed.** The first time you run it, Windows SmartScreen may show "Windows protected your PC".
 Click **More info**, then **Run anyway**. Some antivirus tools are also wary of unsigned single-file .NET programs,
@@ -87,12 +93,12 @@ source (below).
 
 **From source (Windows or Linux, .NET SDK 9.0 or later):**
 
-    git clone https://github.com/taosecurity/sfcutcheck
-    cd sfcutcheck
+    git clone https://github.com/taosecurity/sf-cut-check
+    cd sf-cut-check
     dotnet build src -c Release
     dotnet test tests/SfCutCheck.Tests
 
-The program is then `src/bin/Release/net9.0/sfcutcheck` (`.exe` on Windows).
+The program is then `src/bin/Release/net9.0/sf-cut-check` (`.exe` on Windows).
 
 ## What it tells you
 
@@ -107,29 +113,51 @@ Each reported record gets one verdict:
 | **DevOnly** | Only Bethesda's test and debug cells lead to it (cells named with words like `QA`, `Test`, `Debug`, `zz`). |
 | **Orphaned** | Something links to it, but only records the game itself never reaches (for example an item in a leveled list no one uses). |
 | **Unreferenced** | Nothing links to it at all. |
-| **CannotCheck** | The plugin reader couldn't read this record's links. sfcutcheck never calls these cut. |
+| **CannotCheck** | The plugin reader couldn't read this record's links. sf-cut-check never calls these cut. |
 
 Records the game does reach aren't listed (they're counted in the summary). Structure records, such as placed
 references, navmeshes and keywords, are left out unless you ask for `--all-types`.
 
 The **starting points** are the places the game begins using content by itself: quests that start with the game, the
-story manager's event nodes, every worldspace and interior cell that isn't a test cell, default objects, game
-settings, Gameplay Options groups, stars and planets, and the player. Everything sfcutcheck can reach from them by
-following links counts as used. The report page lists every rule and how many starting points it found.
+story manager's event nodes, every worldspace that isn't a test world, default objects, game settings, Gameplay
+Options groups, stars and planets, and the player. Everything sf-cut-check can reach from them by following links counts
+as used. The report page lists every rule and how many starting points it found.
+
+An **interior cell** isn't a starting point by itself. It counts as used only when something leads to it: a door
+whose destination is inside it, a quest alias or location that names a reference inside it, its own location, or a
+direct link (a script property, a pack-in, a ship). A ship's own interior and exterior cells count when the placed
+ship they belong to does. In `why`, the step from a reference to the cell it's in shows as `in`, and for a cell `why`
+also lists the records outside it that link to the references inside it (a door leading in, for example). Links
+from records inside a cell (its navmeshes) don't count for it, so a cell nothing outside leads to is Unreferenced.
+Interior test cells (EditorIDs such as `zzTestCell` or `QATestCell02`) stay starting points for DevOnly.
+
+A **form list with AddToList** (the DLCs use these to add ship modules, photo mode poses, help pages and outpost
+furniture to base-game lists) joins the list it names, so it counts as used when that list does. In `why` the step
+from the named list to it shows as `owns`.
 
 A **hint** is shown when an EditorID carries a Bethesda marker such as `CUT`, `zz`, `Unused`, `DoNotUse` or
 `DUPLICATE`. It's a clue, not a verdict.
 
 ## Commands
 
-    sfcutcheck scan  [--data <Data folder>] [--types Weapon,Armor] [--all-types] [--out <folder>]
-    sfcutcheck scan  --plugin <MyMod.esm or full path> [--masters-dir <folder>]... [--out <folder>]
-    sfcutcheck why   <FormID:Plugin.esm or EditorID> [more...]
-    sfcutcheck find  <text> [more...] [--word] [--types Weapon,Armor] [--max 40]
-    sfcutcheck --version
+    sf-cut-check scan  [--data <Data folder>] [--types Weapon,Armor] [--all-types] [--out <folder>]
+    sf-cut-check scan  --plugin <MyMod.esm or full path> [--masters-dir <folder>]... [--out <folder>]
+    sf-cut-check why   <FormID:Plugin.esm or EditorID> [more...]
+    sf-cut-check find  <text> [more...] [--word] [--types Weapon,Armor] [--max 40]
+    sf-cut-check --version
 
 Every command also takes `--data <Data folder>`, `--plugins a.esm,b.esm` (read these plugins instead of the official
-set), `--verbose` and `--log <file>`.
+set), `--language <code>`, `--verbose` and `--log <file>`.
+
+`--language <code>` picks the language of the in-game names in the reports, `why` and `find` (English, `en`, when
+it isn't given). The codes are the ones in the game's string file names: `de`, `es`, `fr`, `it`, `ja`, `pl`, `ptbr`,
+`zhhans` and `en` (Mutagen's names, such as `German`, work too). Steam's copy holds every language in
+`Starfield - Localization.ba2`, whatever language the game is set to. A plugin with no text in that language keeps
+its English names, and the console and the report page say which plugins did. A code the tool doesn't know, or one
+with no string files for Starfield.esm, stops with exit code 2 and lists the languages that were found. Verdicts never
+depend on the language.
+
+    sf-cut-check find Supernova --language de
 
 - **`scan`** reads the official plugins (Starfield.esm, the DLC and Bethesda's creations found in the Data folder) and
   writes the reports. `--types` limits the report to some record types (in PowerShell, quote the list:
@@ -143,17 +171,18 @@ set), `--verbose` and `--log <file>`.
   minutes) and saves the result. Later runs, for any mod, read only your mod and its masters and take a few seconds.
   The console says which happened. The saved scan is used only while your official files are unchanged: after a
   Starfield update, or when you add or remove a Creation, the next run scans again by itself. `--no-cache` forces a
-  fresh scan. A plain `sfcutcheck scan` also saves it.
-- **`why`** explains one record: the path from a starting point to it, or the records that link to it and their
-  verdicts.
+  fresh scan. A plain `sf-cut-check scan` also saves it.
+- **`why`** explains one record: its in-game name, its reason, the path from a starting point to it, or the records that link to it
+  and their verdicts. Each link shows its kind; `checks` means the link is only in a condition.
 
-      sfcutcheck why CUT_Skill_Mindfulness
-      sfcutcheck why 0DF320:Starfield.esm
+      sf-cut-check why CUT_Skill_Mindfulness
+      sf-cut-check why 0DF320:Starfield.esm
 
-- **`find`** lists records whose EditorID contains some text, with their verdicts. `--word` matches whole words only
+- **`find`** lists records whose EditorID contains some text, with their in-game names and verdicts (and the reason for Maybe and
+  DevOnly rows). `--word` matches whole words only
   (`--word cut` finds `CUT_AmmoMag` but not `CutsceneIntro`).
 
-      sfcutcheck find Flamethrower Trident --max 40
+      sf-cut-check find Flamethrower Trident --max 40
 
 - **`spike`** prints diagnostics only: how many records and links were read, the time and memory used, and the
   records the plugin reader couldn't read (`--skip Type,Type` leaves record types out).
@@ -163,7 +192,7 @@ once, so ask about all of them in one run.
 
 ## Where the game is
 
-sfcutcheck needs the game's `Data` folder, the one that holds `Starfield.esm`.
+sf-cut-check needs the game's `Data` folder, the one that holds `Starfield.esm`.
 
 | Install | Data folder |
 |---|---|
@@ -190,7 +219,7 @@ own copy of the game.
 Add `--verbose` to see log lines in the terminal (each starts with `log:`), or `--log <file>` to write them to a file
 with times:
 
-    sfcutcheck scan --log C:\Temp\sfcutcheck.log
+    sf-cut-check scan --log C:\Temp\sf-cut-check.log
 
 The log records the version and the arguments, which Data folder was used and why, each plugin read (size and date),
 the record and link counts, any records the plugin reader failed on, the starting points per rule, the report files
@@ -206,7 +235,8 @@ it can't find). Every error message says what to change.
   time) looks unused. Script *properties* are read, so most scripted content is found. When a script is the only
   plausible way something is given, the record is usually Maybe rather than Orphaned.
 - **Every scene and topic inside a running quest counts as used**, even ones whose conditions can never be met.
-- **Interior cells count as starting points**, so a cut interior with no door to it isn't found yet.
+- **Interior cells are reached only through links.** An interior that only a script loads by its ID, or only the
+  ship builder or an outpost uses, comes out Orphaned or Maybe.
 - **Overrides are combined.** Links from every version of a record count, so a record a later plugin stops using
   still counts as used.
 - It reads plugins with Mutagen.Bethesda.Starfield 0.54.4. A handful of official records can't be read (they show as
@@ -215,12 +245,12 @@ it can't find). Every error message says what to change.
 
 ## Background and credit
 
-sfcutcheck was inspired by georgearhitektive's
+sf-cut-check was inspired by georgearhitektive's
 [Bethesda Archaeology Studio Cut Content Analyzer](https://www.nexusmods.com/starfield/mods/17708)
 ([source](https://github.com/georgearhitektive/BethesdaArchaeologyStudioCutContentAnalyzerBETA)), the first tool to
 try to list cut content straight from Bethesda's plugins. Thanks to its author for the idea.
 
-sfcutcheck is original work. **No code, data or design was taken from it:** it was written from scratch on top of
+sf-cut-check is original work. **No code, data or design was taken from it:** it was written from scratch on top of
 the [Mutagen](https://github.com/Mutagen-Modding/Mutagen) plugin library, and it works differently.
 - It follows every kind of link the game uses (placed objects, leveled lists, script properties, conditions,
   dialogue, the story manager) and walks from the game's own starting points. It doesn't flag records that nothing

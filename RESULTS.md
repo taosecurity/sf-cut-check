@@ -1,13 +1,13 @@
 # What the results mean
 
-sfcutcheck sorts every record it reports into one **verdict**. This page explains each verdict in plain words,
+sf-cut-check sorts every record it reports into one **verdict**. This page explains each verdict in plain words,
 with a real example from Starfield, what it means for people playing the game, and what a mod author can do with
-it. The examples come from Starfield's official files as of November 2026, and `sfcutcheck why <EditorID>` shows the
+it. The examples come from Starfield's official files as of November 2026, and `sf-cut-check why <EditorID>` shows the
 evidence for any of them.
 
 First, a word about how the tool thinks. The game starts using content from a few places: quests that start when
 you start a new game, the story manager (which starts quests when things happen, such as arriving in a city), the
-worlds and rooms you can walk into, the menus, and so on. sfcutcheck starts from those places and follows every link
+worlds and rooms you can walk into, the menus, and so on. sf-cut-check starts from those places and follows every link
 from record to record: a vendor's container leads to its leveled lists, a leveled list leads to weapons, a weapon
 leads to its ammo. **Anything it can't reach that way is something the game, as shipped, has no way to show you.**
 
@@ -69,7 +69,7 @@ disconnected group: it may be part of a finished piece of content whose top was 
 **In the game:** you'll never see or hear it.
 
 **For modders:** often the most rewarding find, because a whole group of records is ready and only the top link is
-missing. `sfcutcheck why <record>` shows the group ("linked from" walks up the chain). Find its top record and
+missing. `sf-cut-check why <record>` shows the group ("linked from" walks up the chain). Find its top record and
 connect that one thing. For Sam's chat, that means adding the quest to the story manager the way Andreja's chats
 are added.
 
@@ -104,15 +104,15 @@ A **hint** appears when an EditorID carries a word Bethesda uses for unfinished 
   the editor used.
 - **Scripts aren't read.** A record that a script fetches by its ID looks unused. The tool reads script
   *properties*, which covers most scripted content, but not every case.
-- **Nothing in your game changes.** sfcutcheck only reads files. Cut content doesn't slow your game or cause bugs
+- **Nothing in your game changes.** sf-cut-check only reads files. Cut content doesn't slow your game or cause bugs
   by being there.
 
 ## Using cut content in a mod
 
-1. **Understand it.** Run `sfcutcheck why <EditorID>`. It shows what the record links to (its parts: models, sounds,
+1. **Understand it.** Run `sf-cut-check why <EditorID>`. It shows what the record links to (its parts: models, sounds,
    other records) and what links to it, with each one's verdict. For an Orphaned record, follow "linked from"
    upward to find the top of its group.
-2. **Check that the pieces exist.** Records point at models, textures and voice files, and sfcutcheck doesn't check
+2. **Check that the pieces exist.** Records point at models, textures and voice files, and sf-cut-check doesn't check
    those. Look for them in the game's archives (an archive browser, or xEdit's asset checks) before planning a
    restoration. Cut content is sometimes cut because its art or voice was never finished.
 3. **Try it in the game first.** For an item, use the console: `help <name> 4` finds its full ID, then
@@ -120,7 +120,7 @@ A **hint** appears when an EditorID carries a word Bethesda uses for unfinished 
 4. **Connect it with your own records, not by editing Bethesda's.** Put the item in your own leveled list, vendor or
    quest reward, or add it to a list with a script at run time. That avoids conflicts with other mods that edit the
    same vanilla records.
-5. **Check your mod.** `sfcutcheck scan --plugin YourMod.esm` confirms that the records you added (and the restored
+5. **Check your mod.** `sf-cut-check scan --plugin YourMod.esm` confirms that the records you added (and the restored
    content they reach) are now reached.
 6. **Say what you restored.** Players like to know what's original Bethesda content and what's new. Your mod page
    can list the EditorIDs from the report.

@@ -19,7 +19,7 @@ namespace SfCutCheck;
 public sealed class OfficialCache
 {
     /// <summary>Change this whenever Rules.cs or the walk changes what counts as reached, so old caches are rebuilt.</summary>
-    public const string RulesVersion = "rules-2026-11-11b";
+    public const string RulesVersion = "rules-2026-11-20c";
 
     public string Key { get; }
     public string MadeUtc { get; }
@@ -41,8 +41,11 @@ public sealed class OfficialCache
 
     public bool IsOfficial(FormKey k) => Plugins.Contains(k.ModKey.FileName);
 
-    public static string DefaultDir => Environment.GetEnvironmentVariable("SFCUTCHECK_CACHE_DIR") is { Length: > 0 } d
-        ? d : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "sfcutcheck");
+    // 0.1.9 rename: SF_CUT_CHECK_CACHE_DIR, with the old SFCUTCHECK_CACHE_DIR still read.
+    public static string DefaultDir =>
+        Environment.GetEnvironmentVariable("SF_CUT_CHECK_CACHE_DIR") is { Length: > 0 } d ? d
+        : Environment.GetEnvironmentVariable("SFCUTCHECK_CACHE_DIR") is { Length: > 0 } old ? old
+        : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "sf-cut-check");
 
     /// <summary>The key for the official plugins as they are on disk now.</summary>
     public static string KeyFor(string dataDir, IReadOnlyList<string> officialPlugins)
@@ -111,7 +114,7 @@ public sealed class OfficialCache
             var tmp = path + ".tmp";
             using (var wtr = new StreamWriter(tmp, false, new UTF8Encoding(false)))
             {
-                wtr.WriteLine("# sfcutcheck: saved scan of the official files. Safe to delete; it's rebuilt when needed.");
+                wtr.WriteLine("# sf-cut-check: saved scan of the official files. Safe to delete; it's rebuilt when needed.");
                 wtr.WriteLine($"# made {MadeUtc}");
                 wtr.WriteLine($"# {RulesVersion}; plugins: {string.Join(", ", officialPlugins)}");
                 wtr.WriteLine("# records not strongly reached (every other official record is): FormKey<TAB>tier");

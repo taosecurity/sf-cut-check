@@ -1,10 +1,10 @@
 # What the plugin reader can't read, or doesn't tell us
 
-sfcutcheck reads plugins with Mutagen.Bethesda.Starfield 0.54.4 (https://github.com/Mutagen-Modding/Mutagen). This
+sf-cut-check reads plugins with Mutagen.Bethesda.Starfield 0.54.4 (https://github.com/Mutagen-Modding/Mutagen). This
 page lists what that leaves out on the official files (18 plugins from the Steam version, checked 2026-11-11), and
 what could be improved. It names FormIDs and EditorIDs only, never record contents.
 
-Run `sfcutcheck spike` to see the same lists on your copy of the game.
+Run `sf-cut-check spike` to see the same lists on your copy of the game.
 
 ## 1. Records whose links can't be read (7)
 
@@ -22,7 +22,7 @@ Run `sfcutcheck spike` to see the same lists on your copy of the game.
 
 **Effect:** small.
 - The cell probably fails because one of its navmeshes does: a cell reports its contents' links as its own.
-  sfcutcheck keeps the records inside a failed record linked, so nothing placed in Cell 000025 loses its path.
+  sf-cut-check keeps the records inside a failed record linked, so nothing placed in Cell 000025 loses its path.
 - Navmesh links only matter for navmesh neighbours and doors.
 - All 7 records are inside reached cells, so none shows as CannotCheck in the report. If one ever does, the report
   says so; it never calls it cut.
@@ -50,7 +50,7 @@ source in a debugger, then report it to Mutagen if it isn't fixed in a later ver
 
 `EnumerateFormLinks()` gives the linked FormKey only, not the field it came from.
 
-1. **Conditions:** handled. sfcutcheck finds each record's conditions by reflection (`src/Conditions.cs`), and links
+1. **Conditions:** handled. sf-cut-check finds each record's conditions by reflection (`src/Conditions.cs`), and links
    found only in conditions become "checks". A check on content (a quest, item, NPC, spell...) gives Maybe. A check
    on logic data (a condition record, global, form list...) reaches it, because the game reads that data to run the
    check.
@@ -63,6 +63,6 @@ source in a debugger, then report it to Mutagen if it isn't fixed in a later ver
 
 ## 4. Fields Mutagen 0.54.4 doesn't read
 
-Mutagen 0.54.4 is known to lose some Starfield fields when writing plugins. sfcutcheck only reads, so the question is
+Mutagen 0.54.4 is known to lose some Starfield fields when writing plugins. sf-cut-check only reads, so the question is
 whether a field it skips holds a link. None of the test answers (known cut items, and items known to be in the game)
 depended on one. Check again if a known cut or reachable item comes out wrong.

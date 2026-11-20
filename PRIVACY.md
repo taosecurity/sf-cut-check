@@ -1,6 +1,6 @@
 # Privacy
 
-sfcutcheck runs on your own computer. It collects no data and sends nothing anywhere.
+sf-cut-check runs on your own computer. It collects no data and sends nothing anywhere.
 
 ## What it does not do
 
@@ -23,9 +23,9 @@ sfcutcheck runs on your own computer. It collects no data and sends nothing anyw
 - With `--log <file>`, a troubleshooting log at that path. It holds the Data folder path, plugin names, sizes and
   dates, and counts. No personal data beyond the folder paths on your computer.
 
-- The saved scan of the official files, `%LOCALAPPDATA%\sfcutcheck\official-<key>.txt` (about 5 MB): a list of
+- The saved scan of the official files, `%LOCALAPPDATA%\sf-cut-check\official-<key>.txt` (about 25 MB): a list of
   official record IDs and how far the scan reached them, so `scan --plugin` can skip re-reading the game. It's made
   by a plain `scan` or the first `scan --plugin`.
 
-Nothing else is written. Delete the report folder, the log file and the `%LOCALAPPDATA%\sfcutcheck` folder to remove
-everything sfcutcheck made.
+Nothing else is written. Delete the report folder, the log file and the `%LOCALAPPDATA%\sf-cut-check` folder to remove
+everything sf-cut-check made (versions up to 0.1.8, called sfcutcheck, used `%LOCALAPPDATA%\sfcutcheck`).

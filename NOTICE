@@ -1,7 +1,7 @@
-sfcutcheck
+sf-cut-check
 Copyright (C) 2026 Richard Bejtlich
 
-sfcutcheck is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
+sf-cut-check is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
 License version 3, as published by the Free Software Foundation (see LICENSE). It comes with no warranty.
 
 Libraries (not included in the source; downloaded from nuget.org at build time)
@@ -13,6 +13,6 @@ Libraries (not included in the source; downloaded from nuget.org at build time)
 
 src/Log.cs comes from sfmodcheck (https://github.com/taosecurity/sfmodcheck), by the same author, GPL-3.0.
 
-sfcutcheck holds no Bethesda game files or game code. It reads the official plugins from your own game installation
+sf-cut-check holds no Bethesda game files or game code. It reads the official plugins from your own game installation
 when it runs. The reports it writes list record IDs, EditorIDs and names from those plugins; they are made on your
 computer and stay there unless you share them.

@@ -21,7 +21,7 @@ public sealed record ReportRun(
     string Tool, string Version, string GeneratedUtc, string DataFolder, string[] Plugins, string[] Skipped,
     long Records, long Links, Dictionary<string, int> AllVerdicts, string Filter,
     (string Name, string Tier, int Roots, string Means)[] Rules,
-    string Target = "Starfield's official files", string[]? Checked = null, string? Result = null);
+    string Target = "Starfield's official files", string[]? Checked = null, string? Result = null, string Language = "en");
 
 public static class Report
 {
@@ -72,7 +72,7 @@ public static class Report
     static object RunObject(ReportRun run) => new
     {
         run.Tool, run.Version, Author = About.Author, License = About.License, Url = About.Url,
-        run.GeneratedUtc, run.Target, Checked = run.Checked ?? [], run.Result,
+        run.GeneratedUtc, run.Target, Checked = run.Checked ?? [], run.Result, run.Language,
         run.DataFolder, run.Plugins, run.Skipped, run.Records, run.Links, run.AllVerdicts, run.Filter,
         Rules = run.Rules.Select(r => new { r.Name, r.Tier, r.Roots, r.Means }),
     };
@@ -94,7 +94,7 @@ public static class Report
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>sfcutcheck</title>
+<title>sf-cut-check</title>
 <style>
 /* Layout: a summary band, a filter bar, then one wide table that scrolls inside its own box. */
 :root {
@@ -165,20 +165,20 @@ details.guide p { margin: 8px 0; font-size: 13.5px; }
 </style>
 </head>
 <body>
-<h1 id="h1">sfcutcheck report</h1>
+<h1 id="h1">sf-cut-check report</h1>
 <p class="byline" id="byline"></p>
 <p class="result" id="result" hidden></p>
 <p class="checked" id="checked"></p>
 <details class="guide" open><summary>What the verdicts mean</summary>
-  <p>sfcutcheck starts from the places where the game begins using content (quests that start with a new game, the story manager, the worlds and rooms you can enter, the menus) and follows every link from record to record. A record it can't reach that way is one the game, as shipped, has no way to show you. Links made only inside script code aren't seen.</p>
+  <p>sf-cut-check starts from the places where the game begins using content (quests that start with a new game, the story manager, the worlds and rooms you can enter, the menus) and follows every link from record to record. A record it can't reach that way is one the game, as shipped, has no way to show you. Links made only inside script code aren't seen.</p>
   <div class="cards">
     <div class="card"><p><span class="v v-Maybe">Maybe</span> It's reached only in a way the files can't confirm: a crafting or building recipe, a research project, a record the engine picks by its conditions, or a check for it that nothing in the files satisfies.</p><p><b>Example:</b> the outpost Solar Array comes only from its building recipe, and the Starborn power Grav Dash is checked for but given by a script.</p><p><b>In the game:</b> most Maybe records are in the game. <b>For modders:</b> check before calling one cut.</p></div>
     <div class="card"><p><span class="v v-DevOnly">DevOnly</span> Only Bethesda's test and debug cells lead to it.</p><p><b>Example:</b> AmmoPlaceholderBullet is placed only in QASmoke, a developer test room.</p><p><b>In the game:</b> not in normal play. <b>For modders:</b> usually placeholders; useful as reference rather than for restoring.</p></div>
-    <div class="card"><p><span class="v v-Orphaned">Orphaned</span> Something links to it, but only records the game itself never reaches.</p><p><b>Example:</b> Sam Coe's Neon conversation (COM_Companion_SamCoe_Convo_Neon01) has its quest, lines and scene, but nothing starts the quest, while Andreja's matching chat is started.</p><p><b>In the game:</b> you'll never hear it. <b>For modders:</b> often a whole finished group; use <code>sfcutcheck why</code> to find the top record and connect that one.</p></div>
+    <div class="card"><p><span class="v v-Orphaned">Orphaned</span> Something links to it, but only records the game itself never reaches.</p><p><b>Example:</b> Sam Coe's Neon conversation (COM_Companion_SamCoe_Convo_Neon01) has its quest, lines and scene, but nothing starts the quest, while Andreja's matching chat is started.</p><p><b>In the game:</b> you'll never hear it. <b>For modders:</b> often a whole finished group; use <code>sf-cut-check why</code> to find the top record and connect that one.</p></div>
     <div class="card"><p><span class="v v-Unreferenced">Unreferenced</span> Nothing in the game files links to it at all.</p><p><b>Example:</b> CUT_Skill_Mindfulness is a finished skill called "Mindfulness", but no skill list, quest or item gives it, so it never appears in the skill screen.</p><p><b>In the game:</b> you'll never see it. <b>For modders:</b> the cleanest find; one new link from something the game uses brings it in.</p></div>
     <div class="card"><p><span class="v v-CannotCheck">CannotCheck</span> The plugin reader couldn't read its links.</p><p><b>In the game:</b> unknown. Never treat it as cut.</p><p>Records the game does reach aren't listed; the counts below cover only what's left.</p></div>
   </div>
-  <p>A <span class="hint">hint</span> marks an EditorID with a word Bethesda uses for unfinished work (cut, zz, unused, test, debug, DoNotUse). It's a clue, not a verdict. Not every Orphaned or Unreferenced record is cut content: some are leftovers or editor building blocks. RESULTS.md, next to sfcutcheck.exe, explains each verdict in more detail and how to use cut content in a mod.</p>
+  <p>A <span class="hint">hint</span> marks an EditorID with a word Bethesda uses for unfinished work (cut, zz, unused, test, debug, DoNotUse). It's a clue, not a verdict. Not every Orphaned or Unreferenced record is cut content: some are leftovers or editor building blocks. RESULTS.md, next to sf-cut-check.exe, explains each verdict in more detail and how to use cut content in a mod.</p>
 </details>
 <div class="counts" id="counts"></div>
 <div class="filters">
@@ -195,7 +195,7 @@ details.guide p { margin: 8px 0; font-size: 13.5px; }
 <button class="more" id="more" hidden>Show 500 more</button>
 <footer class="about" id="about"></footer>
 <details><summary>The starting-point rules used</summary>
-  <p>The game starts using content from these places. Everything sfcutcheck can reach from them, by following links from record to record, counts as used.</p>
+  <p>The game starts using content from these places. Everything sf-cut-check can reach from them, by following links from record to record, counts as used.</p>
   <ul id="rules"></ul>
 </details>
 <script id="data" type="application/json">/*DATA*/null</script>
@@ -208,10 +208,10 @@ details.guide p { margin: 8px 0; font-size: 13.5px; }
   // Attribution: a byline under the title and a footer (added 2026-11-11 at the author's request).
   function link(href, text) { var a = el('a', null, text); a.href = href; a.target = '_blank'; a.rel = 'noopener'; return a; }
   var by = document.getElementById('byline');
-  by.appendChild(document.createTextNode('Made with sfcutcheck ' + run.version + ' by ' + run.author + ' · '));
+  by.appendChild(document.createTextNode('Made with sf-cut-check ' + run.version + ' by ' + run.author + ' · '));
   by.appendChild(link(run.url, run.url.replace(/^https:\/\//, '')));
   var about = document.getElementById('about');
-  var p1 = el('p', null, 'sfcutcheck ' + run.version + ' by ' + run.author + '. Free software under ' + run.license + ': ');
+  var p1 = el('p', null, 'sf-cut-check ' + run.version + ' by ' + run.author + '. Free software under ' + run.license + ': ');
   p1.appendChild(link(run.url, 'source and releases'));
   p1.appendChild(document.createTextNode('. Spotted a mistake? '));
   p1.appendChild(link(run.url + '/issues', 'Report it on GitHub'));
@@ -221,11 +221,11 @@ details.guide p { margin: 8px 0; font-size: 13.5px; }
   p2.appendChild(link('https://github.com/Mutagen-Modding/Mutagen', 'Mutagen'));
   p2.appendChild(document.createTextNode(', by Noggog and the Mutagen contributors. The idea came from georgearhitektive\'s '));
   p2.appendChild(link('https://www.nexusmods.com/starfield/mods/17708', 'Bethesda Archaeology Studio Cut Content Analyzer'));
-  p2.appendChild(document.createTextNode('; sfcutcheck is separate work and uses none of its code.'));
+  p2.appendChild(document.createTextNode('; sf-cut-check is separate work and uses none of its code.'));
   about.appendChild(p2);
-  about.appendChild(el('p', null, 'This page was made on your computer from your own copy of the game. sfcutcheck sends nothing anywhere.'));
-  document.title = 'sfcutcheck: ' + run.target;
-  document.getElementById('h1').textContent = 'sfcutcheck: ' + run.target;
+  about.appendChild(el('p', null, 'This page was made on your computer from your own copy of the game. sf-cut-check sends nothing anywhere.'));
+  document.title = 'sf-cut-check: ' + run.target;
+  document.getElementById('h1').textContent = 'sf-cut-check: ' + run.target;
   if (run.result) {
     var res = document.getElementById('result');
     res.appendChild(el('b', null, 'Result:'));

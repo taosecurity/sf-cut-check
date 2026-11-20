@@ -39,7 +39,7 @@ public sealed class DocsTests
     public void DocsGiveTheCurrentVersion()
     {
         var version = Regex.Match(RepoFile(Path.Combine("src", "Program.cs")), "const string Version = \"([^\"]+)\"").Groups[1].Value;
-        Assert.Contains($"sfcutcheck {version}", RepoFile("AGENTS.md"));
-        Assert.Contains($"sfcutcheck-{version}-win-x64.zip", RepoFile("README.md"));
+        Assert.Contains($"sf-cut-check {version}", RepoFile("AGENTS.md"));
+        Assert.Contains($"sf-cut-check-{version}-win-x64.zip", RepoFile("README.md"));
     }
 }

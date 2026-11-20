@@ -427,7 +427,7 @@
           "xunit.extensibility.core": "[2.9.2]"
         }
       },
-      "sfcutcheck": {
+      "sf-cut-check": {
         "type": "Project",
         "dependencies": {
           "Taosecurity.Starfield.BuildKit": "[0.3.1, 0.3.1]"

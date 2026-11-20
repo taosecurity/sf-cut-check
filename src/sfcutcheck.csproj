@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- sfcutcheck: read-only finder of Starfield records the game can never reach (cut content in the official
+  <!-- sf-cut-check (sfcutcheck before 0.1.9): read-only finder of Starfield records the game can never reach (cut content in the official
        files, dead records in a mod).
        Mutagen.Bethesda.Starfield 0.54.4 comes through BuildKit from nuget.org (exact pin). -->
   <PropertyGroup>
@@ -9,13 +9,13 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>SfCutCheck</RootNamespace>
-    <AssemblyName>sfcutcheck</AssemblyName>
-    <Version>0.1.8</Version>
+    <AssemblyName>sf-cut-check</AssemblyName>
+    <Version>0.1.9</Version>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <ServerGarbageCollection>false</ServerGarbageCollection>
     <!-- Shown in the exe's file properties (Details tab). -->
-    <Product>sfcutcheck</Product>
-    <AssemblyTitle>sfcutcheck: find what Starfield never uses</AssemblyTitle>
+    <Product>sf-cut-check</Product>
+    <AssemblyTitle>sf-cut-check: find what Starfield never uses</AssemblyTitle>
     <Description>Finds Starfield records the game can never reach: cut content in the official files and unused records in a mod.</Description>
     <Authors>Richard Bejtlich</Authors>
     <Company>Richard Bejtlich</Company>

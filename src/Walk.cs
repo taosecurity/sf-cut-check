@@ -21,6 +21,7 @@ public sealed class Walk
     public readonly Tier[] TierOf;
     public readonly int[] Pred;            // the record each one was reached from; -1 for roots and unreached
     public readonly RootRule?[] RootOf;    // the rule that made a record a root (roots only)
+    readonly int[] containerOf;            // the record directly holding each one ("contains"); -1 if none
 
     public Walk(RefIndex ix)
     {
@@ -31,6 +32,9 @@ public sealed class Walk
         TierOf = Enumerable.Repeat(Tier.None, n).ToArray();
         Pred = Enumerable.Repeat(-1, n).ToArray();
         RootOf = new RootRule?[n];
+        containerOf = Enumerable.Repeat(-1, n).ToArray();
+        for (var i = 0; i < ix.From.Count; i++)
+            if (ix.Kind[i] == LinkKind.Contains && containerOf[ix.To[i]] == -1) containerOf[ix.To[i]] = ix.From[i];
         var checkStops = new bool[n];   // records a condition check alone doesn't reach (Rules.CheckDoesntReach)
         for (var i = 0; i < n; i++) checkStops[i] = Rules.CheckDoesntReach.Contains(ix.TypeOf(i));
         // Strong pass: a check on content (checkStops) isn't followed, but remembered. The weak pass starts from those
@@ -127,9 +131,22 @@ public sealed class Walk
             case Tier.Weak: return Verdict.Maybe;
             case Tier.Dev: return Verdict.DevOnly;
         }
-        for (var e = inStart[id]; e < inStart[id + 1]; e++)
-            if (Index.Defined.Contains(inFrom[e])) return Verdict.Orphaned;
+        // An interior cell's own placed references ("in" links) and the records inside it (its navmeshes name their
+        // cell) don't count: a cell nothing outside leads to is Unreferenced.
+        foreach (var (from, _) in InboundFromOutside(id))
+            if (Index.Defined.Contains(from)) return Verdict.Orphaned;
         return Verdict.Unreferenced;
+    }
+
+    /// <summary>The records that link to this one from outside it: without "in" links and without links from the
+    /// records it holds directly, for cells (relay step 3b, 2026-11-20: a cell's navmeshes link back to their cell, which made
+    /// cells nothing leads to Orphaned). Used for Orphaned and the reports' linked-from list.</summary>
+    public IEnumerable<(int From, LinkKind Kind)> InboundFromOutside(int id)
+    {
+        // Cells only: a quest's own topics linking back to it stay as they were (Orphaned), as before step 3b.
+        var cell = Index.TypeOf(id) == "Cell";
+        for (var e = inStart[id]; e < inStart[id + 1]; e++)
+            if (inKind[e] != (byte)LinkKind.In && !(cell && containerOf[inFrom[e]] == id)) yield return (inFrom[e], (LinkKind)inKind[e]);
     }
 
     /// <summary>The records that link to this one, with the kind of link.</summary>
@@ -157,6 +174,36 @@ public sealed class Walk
         for (var cur = id; cur != -1; cur = Pred[cur])
             if (RootOf[cur] != null) return RootOf[cur];
         return null;
+    }
+
+    /// <summary>For a record whose rule is checked-only: the record on its path that a running record only checks
+    /// (the record itself, or one it's reached through) and the record that checks it. Null otherwise.
+    /// Relay step 2, 2026-11-20: the report named the record's own predecessor as the checker, which is wrong for a
+    /// record reached through a checked one (a spell's effects were "checked by" the spell that lists them).</summary>
+    public (int Checked, int Checker)? CheckedBy(int id)
+    {
+        if (TierOf[id] == Tier.None) return null;
+        for (var cur = id; cur != -1; cur = Pred[cur])
+            if (RootOf[cur] != null)
+                return RootOf[cur] == Rules.CheckedOnly && Pred[cur] >= 0 ? (cur, Pred[cur]) : null;
+        return null;
+    }
+
+    /// <summary>The short reason shown in report.csv, report.json, report.html, `why` and `find`. One wording for all.
+    /// "checked-only: checked by X" when a running record checks this one; "via checked-only: Y, checked by X" when
+    /// it's reached through Y, which X checks; "via rule: root" for other rules.</summary>
+    public string ReasonText(int id)
+    {
+        var ix = Index;
+        if (CheckedBy(id) is var (chk, by))
+            return chk == id ? $"{Rules.CheckedOnly.Name}: checked by {ix.Describe(by)}"
+                : $"via {Rules.CheckedOnly.Name}: {ix.Describe(chk)}, checked by {ix.Describe(by)}";
+        var p = PathTo(id);
+        // Short, so the report's Why column stays readable; the rule's full meaning is in the legend (and the
+        // page's hover text). User's screenshot 2026-11-11: the long form squeezed the table.
+        if (p.Count > 0) return $"via {ReasonOf(id)!.Name}: {ix.Describe(p[0])}";
+        if (VerdictOf(id) == Verdict.CannotCheck) return "Mutagen couldn't read its links";
+        return VerdictOf(id) == Verdict.Orphaned ? "only records the game never reaches link to it" : "nothing links to it";
     }
 
     /// <summary>The path from a root to this record (root first). Empty if it isn't reached.</summary>

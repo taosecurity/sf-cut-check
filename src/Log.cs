@@ -1,4 +1,4 @@
-// The troubleshooting log (copied from sfmodcheck 0.4.0, 2026-11-11): what sfcutcheck read, which plugins and masters it opened, the root counts,
+// The troubleshooting log (copied from sfmodcheck 0.4.0, 2026-11-11): what sf-cut-check read, which plugins and masters it opened, the root counts,
 // what failed and why, how long each stage took, and the full error when it fails. Off unless asked for:
 //   --verbose      log lines on stderr, each starting "log: "
 //   --log <file>   the same lines, with times, written to that file
