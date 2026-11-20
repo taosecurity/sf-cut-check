@@ -202,7 +202,8 @@ public sealed class Walk
         // Short, so the report's Why column stays readable; the rule's full meaning is in the legend (and the
         // page's hover text). User's screenshot 2026-11-11: the long form squeezed the table.
         if (p.Count > 0) return $"via {ReasonOf(id)!.Name}: {ix.Describe(p[0])}";
-        if (VerdictOf(id) == Verdict.CannotCheck) return "Mutagen couldn't read its links";
+        if (VerdictOf(id) == Verdict.CannotCheck)
+            return ix.FailedIds.Contains(id) ? "Mutagen couldn't read its links" : "Mutagen couldn't read the cell's location or linked references";
         return VerdictOf(id) == Verdict.Orphaned ? "only records the game never reaches link to it" : "nothing links to it";
     }
 

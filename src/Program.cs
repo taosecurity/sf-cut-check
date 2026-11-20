@@ -493,17 +493,15 @@ int Why(Walk w, string what)
             Console.WriteLine($"    {new string(' ', Math.Min(i, 12) * 2)}-{KindWord(w.KindBetween(path[i - 1], path[i]))}-> {ix.Describe(path[i])}");
     }
     // Links from outside first: an interior cell's own references ("in") would otherwise fill the list (0.1.9).
-    // The count matches the reports and the verdict: records inside a cell (its references, its navmeshes) and ids no
-    // plugin defines aren't counted, and the outside links are listed first (0.1.9 review).
+    // The count matches the reports: records inside a cell (its references, its navmeshes) are counted apart, and the
+    // outside links are listed first (0.1.9 review).
     var outside = w.InboundFromOutside(id).ToHashSet();
     var inbound = w.Inbound(id).OrderBy(x => outside.Contains(x) ? 0 : 1).ToList();
     var outsideFrom = outside.Select(x => x.From).ToHashSet();
-    var inboundRecords = outsideFrom.Count(ix.Defined.Contains);
-    var undefinedRecords = outsideFrom.Count - inboundRecords;
+    var inboundRecords = outsideFrom.Count;   // the reports' "linked from" count
     var insideRecords = inbound.Select(x => x.From).Where(f => !outsideFrom.Contains(f)).Distinct().Count();
     Console.WriteLine($"linked from {inboundRecords:N0} record(s)" +
                       (insideRecords > 0 ? $", plus {insideRecords:N0} inside it" : "") +
-                      (undefinedRecords > 0 ? $", plus {undefinedRecords:N0} FormID(s) no plugin defines" : "") +
                       $"{(inbound.Count > 20 ? " (first 20 links)" : "")}:");
     foreach (var (from, kind) in inbound.Take(20))
         Console.WriteLine($"    {KindWord(kind),-8} {ix.Describe(from)}  [{w.VerdictOf(from)}]");
@@ -537,6 +535,8 @@ static int Spike(RefIndex ix, Stopwatch sw)
     Console.WriteLine($"links: {ix.EdgeCount:N0} (contains {ix.ContainsCount:N0}, owns {ix.OwnsCount:N0}); to undefined records: {ix.DanglingCount:N0}");
     Console.WriteLine($"failed to enumerate: {ix.Failed.Count}");
     foreach (var f in ix.Failed) Console.WriteLine($"    {f.Type} {f.Key}: {f.Error}");
+    Console.WriteLine($"cells with an unreadable location or linked references: {ix.CellFieldFailedIds.Count} ({ix.CellFieldFailures} field reads)");
+    foreach (var c in ix.CellFieldFailedIds.Take(20)) Console.WriteLine($"    {ix.Describe(c)}");
     Console.WriteLine($"time: {sw.Elapsed.TotalSeconds:F1} s; managed heap: {GC.GetTotalMemory(true) / 1e9:F2} GB; peak working set: {proc.PeakWorkingSet64 / 1e9:F2} GB");
     Console.WriteLine("links to records no plugin defines, by source type (top 10), with 3 examples each:");
     // FormIDs below 0x800 in Starfield.esm are the engine's own hard-coded forms (PlayerRef, built-in actor values):

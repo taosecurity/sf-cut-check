@@ -51,7 +51,9 @@ public sealed class OfficialCache
     /// and the rules change, so the user may delete it. Null when there is nothing to say.</summary>
     public static string? OldDirNote()
     {
-        var old = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "sfcutcheck");
+        var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        if (string.IsNullOrEmpty(appData)) return null;   // never a relative "sfcutcheck" in the current folder
+        var old = Path.Combine(appData, "sfcutcheck");
         if (!Directory.Exists(old)) return null;
         // No note when the folder in use is the old one or inside it (deleting it would delete the new scan).
         try
