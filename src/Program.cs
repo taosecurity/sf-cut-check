@@ -493,10 +493,11 @@ int Why(Walk w, string what)
             Console.WriteLine($"    {new string(' ', Math.Min(i, 12) * 2)}-{KindWord(w.KindBetween(path[i - 1], path[i]))}-> {ix.Describe(path[i])}");
     }
     // Links from outside first: an interior cell's own references ("in") would otherwise fill the list (0.1.9).
-    var inbound = w.Inbound(id).OrderBy(x => x.Kind == LinkKind.In ? 1 : 0).ToList();
-    // The count matches the reports and the verdict: records inside a cell (its references, its navmeshes) aren't
-    // counted, but they're still listed after the outside links (0.1.9 review).
-    var inboundRecords = w.InboundFromOutside(id).Select(x => x.From).Distinct().Count();
+    // The count matches the reports and the verdict: records inside a cell (its references, its navmeshes) and ids no
+    // plugin defines aren't counted, and the outside links are listed first (0.1.9 review).
+    var outside = w.InboundFromOutside(id).ToHashSet();
+    var inbound = w.Inbound(id).OrderBy(x => outside.Contains(x) ? 0 : 1).ToList();
+    var inboundRecords = outside.Select(x => x.From).Where(ix.Defined.Contains).Distinct().Count();
     var insideRecords = inbound.Select(x => x.From).Distinct().Count() - inboundRecords;
     Console.WriteLine($"linked from {inboundRecords:N0} record(s){(insideRecords > 0 ? $", plus {insideRecords:N0} inside it" : "")}{(inbound.Count > 20 ? " (first 20 links)" : "")}:");
     foreach (var (from, kind) in inbound.Take(20))

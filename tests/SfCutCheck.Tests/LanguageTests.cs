@@ -75,6 +75,28 @@ public sealed class LanguageTests : IDisposable
         Assert.Contains("No string files were found", nothing);
     }
 
+    [Fact]
+    public void NonLocalizedPluginsArentCountedAsEnglishFallbacks()
+    {
+        // 0.1.9 review: a plugin that isn't localized keeps its names in the record, in its author's language.
+        const string name = "SctPlain.esm";
+        var mod = Plugin.New(name, PluginStyle.Full, "test", "made-up plain plugin for sfcutcheck tests");
+        var gun = mod.Weapons.AddNew("SCT_PlainGun");
+        gun.Name = "Gewehr";
+        mod.WriteToBinary(Path.Combine(dir, name), new BinaryWriteParameters());
+        var de = RefIndex.Build(dir, [name], new HashSet<string>(), _ => { }, language: Language.German);
+        Assert.True(de.TryGetId(gun.FormKey, out var g));
+        Assert.Equal("Gewehr", de.NameOf(g));
+        Assert.Empty(de.EnglishNameFallbacks);
+    }
+
+    [Fact]
+    public void LooseStringFilesAreFoundWhateverTheirCase()
+    {
+        Loose("Mod_EN.STRINGS", "MOD_de.Strings");
+        Assert.Equal(["de", "en"], Languages.Found([dir], "Mod.esm"));
+    }
+
     /// <summary>A localized made-up plugin with an English and a German name: Mutagen writes its Strings folder.</summary>
     (string Plugin, Mutagen.Bethesda.Plugins.FormKey Rifle, Mutagen.Bethesda.Plugins.FormKey Pistol) Localized()
     {

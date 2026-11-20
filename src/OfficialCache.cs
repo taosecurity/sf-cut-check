@@ -52,7 +52,11 @@ public sealed class OfficialCache
     public static string? OldDirNote()
     {
         var old = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "sfcutcheck");
-        if (!Directory.Exists(old) || string.Equals(Path.GetFullPath(old).TrimEnd('\\', '/'), Path.GetFullPath(DefaultDir).TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase)) return null;
+        if (!Directory.Exists(old)) return null;
+        // No note when the folder in use is the old one or inside it (deleting it would delete the new scan).
+        var oldFull = Path.GetFullPath(old).TrimEnd('\\', '/') + Path.DirectorySeparatorChar;
+        var nowFull = Path.GetFullPath(DefaultDir).TrimEnd('\\', '/') + Path.DirectorySeparatorChar;
+        if (nowFull.StartsWith(oldFull, StringComparison.OrdinalIgnoreCase)) return null;
         return $"note: the saved scan of older versions in {old} isn't used any more; you can delete that folder.";
     }
 

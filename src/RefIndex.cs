@@ -41,6 +41,16 @@ public sealed class RefIndex
     public readonly Dictionary<int, string> EditorIds = new();
     public readonly Dictionary<int, string> Names = new();
     public int NameFailures;
+    /// <summary>Cell fields (location, linked references) Mutagen failed on; such a cell is CannotCheck.</summary>
+    public int CellFieldFailures;
+
+    void CellFieldFailed(FormKey key, int self, string field, Exception e)
+    {
+        CellFieldFailures++;
+        if (FailedIds.Add(self)) Failed.Add((key, "Cell", $"{field}: {e.GetType().Name}: {e.Message}"));
+        if (CellFieldFailures <= 5) Log.Write($"{field} of cell {key} unreadable: {e.GetType().Name}: {e.Message}");
+        else if (CellFieldFailures == 6) Log.Write("more cell fields unreadable; the total is logged at the end");
+    }
     /// <summary>--language: the language names were read in, and the plugins whose names (some or all) stayed English
     /// because they have no strings in it.</summary>
     public Language Language { get; private set; } = Language.English;
@@ -242,9 +252,10 @@ public sealed class RefIndex
                 if (Rules.RootOf(r) is { } rule) ix.Roots.Add((self, rule));
                 if (r is ICellGetter cellRec)
                 {
-                    // A cell Mutagen can't read must not stop the scan (0.1.9 review): log it and go on.
+                    // A cell Mutagen can't read must not stop the scan (0.1.9 review): it's marked as failed, so it
+                    // comes out CannotCheck instead of cut, and the first few are logged.
                     try { if (!cellRec.Location.IsNull) ix.cellLocations.Add((self, ix.Id(cellRec.Location.FormKey))); }
-                    catch (Exception e) { Log.Write($"location of cell {r.FormKey} unreadable: {e.GetType().Name}: {e.Message}"); }
+                    catch (Exception e) { ix.CellFieldFailed(r.FormKey, self, "location", e); }
                     // A ship's instance cells name the placed ship they belong to (linked references with the keywords
                     // SpaceshipLinkedInterior / SpaceshipLinkedExterior): the placed ship leads into them (step 3b).
                     try
@@ -253,7 +264,7 @@ public sealed class RefIndex
                             foreach (var lr in lrs)
                                 if (!lr.Reference.IsNull) ix.cellLinkedRefs.Add((self, ix.Id(lr.Reference.FormKey)));
                     }
-                    catch (Exception e) { Log.Write($"linked references of cell {r.FormKey} unreadable: {e.GetType().Name}: {e.Message}"); }
+                    catch (Exception e) { ix.CellFieldFailed(r.FormKey, self, "linked references", e); }
                 }
                 foreach (var owner in Rules.OwnersOf(r))
                     if (!owner.IsNull) ix.Add(ix.Id(owner), self, LinkKind.Owns, type);
@@ -351,6 +362,7 @@ public sealed class RefIndex
         foreach (var f in ix.Failed) Log.Write($"Mutagen failed on {f.Type} {f.Key}: {f.Error} (its own links are left out; see MUTAGEN-GAPS.md)");
         foreach (var g in ix.Roots.GroupBy(r => r.Rule)) Log.Write($"root rule {g.Key.Name}: {g.Count():N0} roots");
         Log.Write($"names read: {ix.Names.Count:N0}; unreadable: {ix.NameFailures}");
+        if (ix.CellFieldFailures > 0) Log.Write($"cell fields unreadable (those cells are CannotCheck): {ix.CellFieldFailures:N0}");
         Log.Write($"link cache: {ix.CacheHits:N0} records read once instead of again, {ix.CacheMisses:N0} read on their own, " +
                   $"{ix.CacheFull:N0} not kept (cap {CacheLimit:N0} links)");
         ix.DanglingCount = ix.To.LongCount(t => !ix.Defined.Contains(t));

@@ -50,9 +50,12 @@ public static class Languages
             // string files (0.1.9 review: listing every archive took seconds).
             var archives = Directory.EnumerateFiles(dir, stem + " - *.ba2", new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive })
                 .OrderBy(a => Path.GetFileName(a).Contains("Localization", StringComparison.OrdinalIgnoreCase) ? 0 : 1).ToList();
+            var fromLocalization = false;
             foreach (var ba2 in archives)
             {
-                if (found.Count > 0 && !Path.GetFileName(ba2).Contains("Localization", StringComparison.OrdinalIgnoreCase)) break;
+                var isLocalization = Path.GetFileName(ba2).Contains("Localization", StringComparison.OrdinalIgnoreCase);
+                if (fromLocalization && !isLocalization) break;
+                var before = found.Count;
                 try
                 {
                     foreach (var f in Archive.CreateReader(GameRelease.Starfield, ba2).Files)
@@ -62,6 +65,8 @@ public static class Languages
                     }
                 }
                 catch (Exception e) { Log.Write($"language check: can't list {ba2}: {e.GetType().Name}: {e.Message}"); }
+                // Only string files from this folder's Localization archives end the search (loose files don't).
+                if (isLocalization && found.Count > before) fromLocalization = true;
             }
         }
         Log.Write($"language check: string files for {pluginFileName}: {(found.Count == 0 ? "none" : string.Join(", ", found))}");
