@@ -41,13 +41,17 @@ public sealed class RefIndex
     public readonly Dictionary<int, string> EditorIds = new();
     public readonly Dictionary<int, string> Names = new();
     public int NameFailures;
-    /// <summary>Cell fields (location, linked references) Mutagen failed on; such a cell is CannotCheck.</summary>
+    /// <summary>Cells with a field (location, linked references) Mutagen failed on, in any version: one that isn't
+    /// reached is CannotCheck, because a way into it may be in the unreadable field. Kept apart from FailedIds, so a
+    /// failure of the cell's own links is still recorded on its own (0.1.9 review). One bad override marks the cell
+    /// for the whole load order, which errs toward "cannot check" rather than "cut".</summary>
+    public readonly HashSet<int> CellFieldFailedIds = new();
     public int CellFieldFailures;
 
     void CellFieldFailed(FormKey key, int self, string field, Exception e)
     {
         CellFieldFailures++;
-        if (FailedIds.Add(self)) Failed.Add((key, "Cell", $"{field}: {e.GetType().Name}: {e.Message}"));
+        CellFieldFailedIds.Add(self);
         if (CellFieldFailures <= 5) Log.Write($"{field} of cell {key} unreadable: {e.GetType().Name}: {e.Message}");
         else if (CellFieldFailures == 6) Log.Write("more cell fields unreadable; the total is logged at the end");
     }
@@ -362,7 +366,8 @@ public sealed class RefIndex
         foreach (var f in ix.Failed) Log.Write($"Mutagen failed on {f.Type} {f.Key}: {f.Error} (its own links are left out; see MUTAGEN-GAPS.md)");
         foreach (var g in ix.Roots.GroupBy(r => r.Rule)) Log.Write($"root rule {g.Key.Name}: {g.Count():N0} roots");
         Log.Write($"names read: {ix.Names.Count:N0}; unreadable: {ix.NameFailures}");
-        if (ix.CellFieldFailures > 0) Log.Write($"cell fields unreadable (those cells are CannotCheck): {ix.CellFieldFailures:N0}");
+        if (ix.CellFieldFailures > 0)
+            Log.Write($"cell fields unreadable: {ix.CellFieldFailures:N0} in {ix.CellFieldFailedIds.Count:N0} cell(s); those not reached are CannotCheck");
         Log.Write($"link cache: {ix.CacheHits:N0} records read once instead of again, {ix.CacheMisses:N0} read on their own, " +
                   $"{ix.CacheFull:N0} not kept (cap {CacheLimit:N0} links)");
         ix.DanglingCount = ix.To.LongCount(t => !ix.Defined.Contains(t));

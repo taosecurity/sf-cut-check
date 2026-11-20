@@ -124,7 +124,7 @@ public sealed class Walk
 
     public Verdict VerdictOf(int id)
     {
-        if (Index.FailedIds.Contains(id) && TierOf[id] != Tier.Strong) return Verdict.CannotCheck;
+        if ((Index.FailedIds.Contains(id) || Index.CellFieldFailedIds.Contains(id)) && TierOf[id] != Tier.Strong) return Verdict.CannotCheck;
         switch (TierOf[id])
         {
             case Tier.Strong: return Verdict.Reached;

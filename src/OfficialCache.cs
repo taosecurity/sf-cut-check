@@ -54,9 +54,13 @@ public sealed class OfficialCache
         var old = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "sfcutcheck");
         if (!Directory.Exists(old)) return null;
         // No note when the folder in use is the old one or inside it (deleting it would delete the new scan).
-        var oldFull = Path.GetFullPath(old).TrimEnd('\\', '/') + Path.DirectorySeparatorChar;
-        var nowFull = Path.GetFullPath(DefaultDir).TrimEnd('\\', '/') + Path.DirectorySeparatorChar;
-        if (nowFull.StartsWith(oldFull, StringComparison.OrdinalIgnoreCase)) return null;
+        try
+        {
+            var oldFull = Path.GetFullPath(old).TrimEnd('\\', '/') + Path.DirectorySeparatorChar;
+            var nowFull = Path.GetFullPath(DefaultDir).TrimEnd('\\', '/') + Path.DirectorySeparatorChar;
+            if (nowFull.StartsWith(oldFull, StringComparison.OrdinalIgnoreCase)) return null;
+        }
+        catch (Exception) { return null; }   // a cache path that can't be resolved: say nothing rather than stop
         return $"note: the saved scan of older versions in {old} isn't used any more; you can delete that folder.";
     }
 

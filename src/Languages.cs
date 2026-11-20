@@ -28,8 +28,10 @@ public static class Languages
         return false;
     }
 
-    /// <summary>The language codes a plugin has string files for, loose or in its archives, in any of the folders.</summary>
-    public static SortedSet<string> Found(IEnumerable<string> dirs, string pluginFileName)
+    /// <summary>The language codes a plugin has string files for, loose or in its archives, in any of the folders.
+    /// With <paramref name="want"/>, the search may stop once that language is found, so the list can be short;
+    /// when it isn't found, every archive has been listed and the list is complete.</summary>
+    public static SortedSet<string> Found(IEnumerable<string> dirs, string pluginFileName, string? want = null)
     {
         var found = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
         var stem = Path.GetFileNameWithoutExtension(pluginFileName);
@@ -46,7 +48,8 @@ public static class Languages
             var loose = Path.Combine(dir, "Strings");
             if (Directory.Exists(loose))
                 foreach (var f in Directory.EnumerateFiles(loose, prefix + "*.strings", new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive })) Add(Path.GetFileName(f));
-            // Localization archives first; the others (meshes, textures, sounds) are listed only if those hold no
+            // Localization archives first. The others (meshes, textures, sounds) are listed only while the wanted
+            // language is still missing, or, with nothing wanted, when this folder's Localization archives held no
             // string files (0.1.9 review: listing every archive took seconds).
             var archives = Directory.EnumerateFiles(dir, stem + " - *.ba2", new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive })
                 .OrderBy(a => Path.GetFileName(a).Contains("Localization", StringComparison.OrdinalIgnoreCase) ? 0 : 1).ToList();
@@ -54,7 +57,7 @@ public static class Languages
             foreach (var ba2 in archives)
             {
                 var isLocalization = Path.GetFileName(ba2).Contains("Localization", StringComparison.OrdinalIgnoreCase);
-                if (fromLocalization && !isLocalization) break;
+                if (!isLocalization && (want != null ? found.Contains(want) : fromLocalization)) break;
                 var before = found.Count;
                 try
                 {
@@ -80,10 +83,14 @@ public static class Languages
         lang = Language.English;
         if (requested == null) return null;
         var dirList = dirs.ToList();
-        var have = Found(dirList, basePlugin);
         if (!TryParse(requested, out lang))
+        {
+            var all = Found(dirList, basePlugin);
             return $"unknown language \"{requested}\" for --language. Use one of the codes in the game's string file names" +
-                   (have.Count > 0 ? $"; {basePlugin} has: {string.Join(", ", have)}." : $": {string.Join(", ", All.Select(x => x.Code))}.");
+                   (all.Count > 0 ? $"; {basePlugin} has: {string.Join(", ", all)}." : $": {string.Join(", ", All.Select(x => x.Code))}.");
+        }
+        // Not found means every archive was listed, so "have" is the full list for the message below.
+        var have = Found(dirList, basePlugin, CodeOf(lang));
         if (have.Contains(CodeOf(lang))) return null;
         return $"no {lang} string files ({Path.GetFileNameWithoutExtension(basePlugin)}_{CodeOf(lang)}.STRINGS) for {basePlugin} in {string.Join(" or ", dirList.Select(Path.GetFullPath))} " +
                $"(loose in Strings, or in \"{Path.GetFileNameWithoutExtension(basePlugin)} - *.ba2\"). " +

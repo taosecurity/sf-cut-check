@@ -497,9 +497,14 @@ int Why(Walk w, string what)
     // plugin defines aren't counted, and the outside links are listed first (0.1.9 review).
     var outside = w.InboundFromOutside(id).ToHashSet();
     var inbound = w.Inbound(id).OrderBy(x => outside.Contains(x) ? 0 : 1).ToList();
-    var inboundRecords = outside.Select(x => x.From).Where(ix.Defined.Contains).Distinct().Count();
-    var insideRecords = inbound.Select(x => x.From).Distinct().Count() - inboundRecords;
-    Console.WriteLine($"linked from {inboundRecords:N0} record(s){(insideRecords > 0 ? $", plus {insideRecords:N0} inside it" : "")}{(inbound.Count > 20 ? " (first 20 links)" : "")}:");
+    var outsideFrom = outside.Select(x => x.From).ToHashSet();
+    var inboundRecords = outsideFrom.Count(ix.Defined.Contains);
+    var undefinedRecords = outsideFrom.Count - inboundRecords;
+    var insideRecords = inbound.Select(x => x.From).Where(f => !outsideFrom.Contains(f)).Distinct().Count();
+    Console.WriteLine($"linked from {inboundRecords:N0} record(s)" +
+                      (insideRecords > 0 ? $", plus {insideRecords:N0} inside it" : "") +
+                      (undefinedRecords > 0 ? $", plus {undefinedRecords:N0} FormID(s) no plugin defines" : "") +
+                      $"{(inbound.Count > 20 ? " (first 20 links)" : "")}:");
     foreach (var (from, kind) in inbound.Take(20))
         Console.WriteLine($"    {KindWord(kind),-8} {ix.Describe(from)}  [{w.VerdictOf(from)}]");
     if (ix.TypeOf(id) == "Cell")
