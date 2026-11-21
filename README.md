@@ -206,9 +206,9 @@ vanilla quest, a cell you place something in. So the first `--plugin` run scans 
 and saves the result. Later runs, for any mod, read only your mod and its masters and take a few seconds.
 
 The console says which happened. The saved scan is used only while your official files are unchanged: after a
-Starfield update, or when you add or remove a Creation, the next run scans again by itself. `--no-cache` forces a
-fresh scan, and a plain `sf-cut-check scan` also saves it. The saved scan lives in `%LOCALAPPDATA%\sf-cut-check`, or
-in the folder named by the `SF_CUT_CHECK_CACHE_DIR` environment variable (the old name `SFCUTCHECK_CACHE_DIR` still
+Starfield update, or when you add or remove a Creation, the next run scans again by itself. `--no-cache` reads the
+official files for that run only and doesn't save them; a plain `sf-cut-check scan` rebuilds the saved scan.
+The saved scan lives in `%LOCALAPPDATA%\sf-cut-check`, or in the folder named by the `SF_CUT_CHECK_CACHE_DIR` environment variable (the old name `SFCUTCHECK_CACHE_DIR` still
 works in 0.2.0, its last release). Up to 0.1.8 it was in
 `%LOCALAPPDATA%\sfcutcheck` (the old name), which can be deleted.
 
@@ -313,7 +313,8 @@ it can't find). Every error message says what to change.
   official records' verdicts but not their EditorIDs, so the tool can't tell that a mod's recipe uses the official
   ship builder workbench and a `VendorSM_` keyword. Such a recipe stays Maybe in that mode, even when the mod adds
   its own technician. Add `--no-cache` (`scan --plugin MyMod.esm --no-cache`) to read the official files together
-  with the mod (about 2 minutes): the rule then applies, and the report still lists only the mod's records.
+  with the mod (2 to 3 minutes each time, because `--no-cache` never saves the scan): the rule then applies, and
+  the report still lists only the mod's records.
 - **Overrides are combined.** Links from every version of a record count, so a record a later plugin stops using
   still counts as used.
 - It reads plugins with Mutagen.Bethesda.Starfield 0.54.4. A handful of official records can't be read (they show as

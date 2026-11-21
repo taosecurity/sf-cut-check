@@ -64,8 +64,9 @@ Pick one. Files come from https://github.com/taosecurity/sf-cut-check/releases (
     sf-cut-check --version
 
 Its first line is `sf-cut-check 0.2.0 by Richard Bejtlich - GPL-3.0 - https://github.com/taosecurity/sf-cut-check`
-(two credit lines follow). Every other command prints that same first line on stderr. Then run the first real
-command (step 5.1) to prove it can read the game.
+(two credit lines follow). Every other command prints that same first line on stderr. `--version` doesn't
+read the game, so then run any real command (step 5.1, or a `why` from step 5.4) to prove it can find and read the
+game files.
 
 ## 5. Common tasks
 
@@ -110,10 +111,15 @@ folder if it doesn't exist.
    A full load-order FormID as the console shows it works too when the plugin name is given: `0128AE15:Starfield.esm`
    for a full plugin, `FE001800:MyLight.esm` for a light one, `FD01ABCD:MyMedium.esm` for a medium one.
 
-   For each record it prints the in-game name (if it has one), the verdict, the reason (the same text as the reports' `reason`, for any verdict but
-   Reached), the path from a starting point (if reached), the records that link to it (with their verdicts), and the
-   records it links to (with theirs), up to 20 of each. Each link line starts with its kind: `links`, `contains`,
-   `owns`, or `checks` (the link is only in a condition).
+   For each record it prints a header line (type, FormID and EditorID), a `name:` line (only when the record has an
+   in-game name), `verdict:`, and `reason:` (the same text as the reports' `reason`, only when the verdict isn't
+   Reached). A reached record gets the path from a starting point instead: `reached from root rule ...`, preceded by
+   `verdict rule ...` when a rule along the way (such as `ship-technician`) decided the verdict. Then come the records
+   that link to it and the records it links to, each with its verdict in brackets, up to 20 of each. Each link line
+   starts with its kind: `links`, `contains`, `owns`, or `checks` (the link is only in a condition).
+   `[no plugin read defines it]` in place of a verdict means the linked FormID isn't defined in any plugin read (often
+   a built-in engine form); it isn't an error. `why` reads all the plugins each time (about 2 minutes) and never uses
+   or writes the saved scan, so give every record you need in one call.
 
 5. **Search by EditorID:**
 
@@ -205,6 +211,10 @@ folder if it doesn't exist.
   ship (including the placed ship a ship's own cells belong to) or script property leads to it (the `in` link in
   `why`; for a cell, `why` also lists the outside links into the references inside it). Interior test cells stay
   DevOnly. A cell the engine or a quest picks by keyword, with no link in the data, shows as not used.
+- **Ship technician recipes with the saved scan:** `scan --plugin` doesn't apply rule `ship-technician` to a mod's
+  own ship builder recipes when it uses the saved scan (the saved scan has no official EditorIDs), so they stay Maybe.
+  To check them, run `scan --plugin MyMod.esm --no-cache` (2 to 3 minutes, every time): the rule then applies, and the
+  report still lists only the mod's records.
 - **Overrides:** links from every version of a record count.
 - **The reports** list FormIDs, EditorIDs and names from Bethesda's plugins. They're made from the user's own copy
   of the game; suggest the user doesn't post the whole files publicly.
