@@ -309,9 +309,11 @@ it can't find). Every error message says what to change.
 - **Every scene and topic inside a running quest counts as used**, even ones whose conditions can never be met.
 - **Interior cells are reached only through links.** An interior that only a script loads by its ID, or only the
   ship builder or an outpost uses, comes out Orphaned or Maybe.
-- **`scan --plugin` doesn't apply rule `ship-technician` to a mod's own ship recipes.** A mod's ship builder recipe
-  gated by an official `VendorSM_` keyword stays Maybe in that mode, because the official technicians aren't read
-  (the saved scan holds only their verdicts). A full scan with the mod in the Data folder applies the rule.
+- **`scan --plugin` doesn't apply rule `ship-technician` to recipes that only official technicians offer.** A mod's
+  ship builder recipe gated by an official `VendorSM_` keyword stays Maybe in that mode, because the official
+  technicians aren't read (the saved scan holds only their verdicts). A technician the mod adds itself counts when the game reaches it. To
+  apply the rule with the official technicians, read the official plugins and the mod together with `--plugins`, for
+  example `scan --plugins Starfield.esm,Constellation.esm,MyMod.esm` (list every official plugin you have).
 - **Overrides are combined.** Links from every version of a record count, so a record a later plugin stops using
   still counts as used.
 - It reads plugins with Mutagen.Bethesda.Starfield 0.54.4. A handful of official records can't be read (they show as

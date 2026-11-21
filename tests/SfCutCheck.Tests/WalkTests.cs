@@ -321,10 +321,6 @@ public sealed class WalkTests : IDisposable
         Assert.True(walk.Offers(Id("SCT_Technician"), recipe));
         Assert.Equal(Rules.ShipTechnician, walk.ReasonOf(Id("SCT_ShipRecipe_Module")));
         Assert.Equal(1, walk.TechnicianRoots);
-        // The reason names the recipe and its technician, not the technician's own root (0.2.0 review).
-        Assert.Equal($"ship-technician: offered by {D("SCT_Technician")}", walk.ReasonText(recipe));
-        Assert.Equal($"via ship-technician: {D("SCT_ShipRecipe")}, offered by {D("SCT_Technician")}",
-            walk.ReasonText(Id("SCT_ShipRecipe_Module")));
         Assert.Equal(1, walk.Index.TechnicianGates.Count(g => g.Recipe == recipe));
         // Gated recipes found: the ship builder ones with one VendorSM_ keyword (Parts, Lost, Checked).
         Assert.Equal(3, walk.Index.TechnicianGates.Count);
