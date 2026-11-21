@@ -34,7 +34,7 @@ The results change. On the official Steam files (November 2026), 0.2.0 finds Rea
 - **New root rule `ship-technician`.** A ship builder recipe (workbench `WorkbenchShipBuildingKeyword`) counts as Reached when every condition is either "has keyword `VendorSM_...`" (one keyword) or "the player's level is at least N", and an NPC the game reaches carries that keyword on its own record. `why` shows the technician as `-offers->`. On the official files, 602 of the 604 recipes of that shape are Reached; the other 2 (vehicle recipes in SFBGS004.esm) name a keyword no NPC carries and stay Maybe. Every one of the 109,103 changed records went from Maybe to Reached.
 - Ship recipes with other conditions (a quest stage, a perk) stay Maybe, as before.
 - The about 20 cells the engine loads by name or keyword still show as not used. No starting point was added for them, because neither the plugin data, the game exe nor the official scripts name any of them (RESULTS.md lists them).
-- `scan --plugin` still treats a mod's own ship recipes gated by an official `VendorSM_` keyword as Maybe, because the official technicians aren't read in that mode.
+- With the saved scan, `scan --plugin` still treats a mod's own ship recipes gated by an official `VendorSM_` keyword as Maybe, because the saved scan doesn't keep the official EditorIDs the rule needs. Add `--no-cache` to read the official files with the mod; the rule then applies.
 - The first run after the update scans the official files again, because the rules and the saved scan's layout changed.
 
 ### Rename
