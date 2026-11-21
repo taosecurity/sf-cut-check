@@ -9,7 +9,7 @@ using System.Diagnostics;
 using Mutagen.Bethesda.Plugins;
 using SfCutCheck;
 
-const string Version = "0.1.9";
+const string Version = "0.2.0";
 const string DefaultData = @"C:\Program Files (x86)\Steam\steamapps\common\Starfield\Data";
 const string Usage =
     "usage:\n" +
@@ -296,6 +296,9 @@ int Scan(Walk w)
         Console.WriteLine($"records: {ix.Defined.Count:N0}; links: {w.LinkCount:N0}; roots: {ix.Roots.Count:N0}");
         foreach (var g in ix.Roots.GroupBy(r => r.Rule).OrderBy(g => g.Key.Tier))
             Console.WriteLine($"    root rule {g.Key.Name,-18} ({g.Key.Tier,-6}) {g.Count(),8:N0}  {g.Key.Means}");
+        // Rule ship-technician's roots are found during the walk, so they aren't in ix.Roots (0.2.0).
+        if (w.TechnicianRoots > 0)
+            Console.WriteLine($"    root rule {Rules.ShipTechnician.Name,-18} ({Rules.ShipTechnician.Tier,-6}) {w.TechnicianRoots,8:N0}  {Rules.ShipTechnician.Means}");
     }
     else
         Console.WriteLine($"plugins read: {string.Join(", ", ix.PluginsRead)}{(officialCache != null ? $" (the official files from the saved scan, {officialCache.MadeUtc})" : "")}");
@@ -402,7 +405,7 @@ int Scan(Walk w)
         ix.PluginsRead.ToArray(), ix.Skipped.ToArray(), ix.Defined.Count, w.LinkCount,
         verdictCounts.ToDictionary(kv => kv.Key.ToString(), kv => kv.Value), filter,
         Rules.All.Concat(ix.Roots.Select(x => x.Rule).Distinct().Except(Rules.All))
-            .Select(r => (r.Name, r.Tier.ToString(), ix.Roots.Count(x => x.Rule == r), r.Means)).ToArray(),
+            .Select(r => (r.Name, r.Tier.ToString(), r == Rules.ShipTechnician ? w.TechnicianRoots : ix.Roots.Count(x => x.Rule == r), r.Means)).ToArray(),
         pluginName ?? "Starfield's official files", checkedLines.ToArray(), result, Languages.CodeOf(language));
     var files = Report.WriteAll(outDir, run, reportRows);
     Console.WriteLine();
@@ -490,7 +493,7 @@ int Why(Walk w, string what)
         Console.WriteLine($"reached from root rule {w.RootOf[root]!.Name} ({w.RootOf[root]!.Means}):");
         Console.WriteLine($"    {ix.Describe(root)}");
         for (var i = 1; i < path.Count; i++)
-            Console.WriteLine($"    {new string(' ', Math.Min(i, 12) * 2)}-{KindWord(w.KindBetween(path[i - 1], path[i]))}-> {ix.Describe(path[i])}");
+            Console.WriteLine($"    {new string(' ', Math.Min(i, 12) * 2)}-{(w.Offers(path[i - 1], path[i]) ? "offers" : KindWord(w.KindBetween(path[i - 1], path[i])))}-> {ix.Describe(path[i])}");
     }
     // Links from outside first: an interior cell's own references ("in") would otherwise fill the list (0.1.9).
     // The count matches the reports: records inside a cell (its references, its navmeshes) are counted apart, and the

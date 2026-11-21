@@ -1,5 +1,52 @@
 # Changelog
 
+## 0.2.0
+
+### What's new
+
+Ship builder recipes that a ship technician offers now count as used. A recipe whose only conditions are a technician's `VendorSM_` vendor keyword (and maybe the player's level) is Reached when a technician the game reaches carries that keyword, so about 109,000 ship parts and their pieces move from Maybe to Reached. The saved scan of the official files now also keeps the records Mutagen couldn't read, so `scan --plugin` marks them CannotCheck exactly as a full scan does. The `sfcutcheck.cmd` alias from 0.1.9 is gone.
+
+### Example
+
+`why` shows the technician who offers a ship recipe (the plugin-reading lines that come first are left out):
+
+    > sf-cut-check why co_SMC_Shields_Dogstar_104D_Guardian_lvl76
+    ConstructibleObject 00455A:Starfield.esm co_SMC_Shields_Dogstar_104D_Guardian_lvl76
+    verdict: Reached
+    verdict rule ship-technician: a ship builder recipe a reached ship technician offers (its only conditions are a VendorSM_ keyword the technician carries, and maybe the player's level)
+    reached from root rule start-game-quest (a quest that starts when the game starts):
+        Quest 0EE9FD:Starfield.esm CF_Unique
+          -links-> Npc 01539E:Starfield.esm CF_JasmineDurand
+            -offers-> ConstructibleObject 00455A:Starfield.esm co_SMC_Shields_Dogstar_104D_Guardian_lvl76
+    linked from 0 record(s):
+    links to 6 record(s):
+        checks   Keyword 1453B0:Starfield.esm VendorSM_BasicParts_Dogstar_Shields  [Reached]
+        links    Keyword 29C476:Starfield.esm Category_ShipMod_Shields  [Reached]
+        links    Keyword 29C480:Starfield.esm WorkbenchShipBuildingKeyword  [Reached]
+        checks   000014:Starfield.esm  [no plugin read defines it]
+        links    Perk 2C59DC:Starfield.esm Skill_StarshipDesign  [Reached]
+        links    FormList 004555:Starfield.esm SMCSet_Shields_Dogstar_104D_Guardian_lvl76  [Reached]
+
+### Accuracy
+
+The results change. On the official Steam files (November 2026), 0.2.0 finds Reached 6,970,818, Maybe 22,473, DevOnly 126,675, Orphaned 488,432 and Unreferenced 51,209, with 23,316 reported records. 0.1.9 found Reached 6,861,715 and Maybe 131,576 (the other verdicts are the same), with 25,020 reported.
+
+- **New root rule `ship-technician`.** A ship builder recipe (workbench `WorkbenchShipBuildingKeyword`) counts as Reached when every condition is either "has keyword `VendorSM_...`" (one keyword) or "the player's level is at least N", and an NPC the game reaches carries that keyword on its own record. `why` shows the technician as `-offers->`. On the official files, 602 of the 604 recipes of that shape are Reached; the other 2 (vehicle recipes in SFBGS004.esm) name a keyword no NPC carries and stay Maybe. Every one of the 109,103 changed records went from Maybe to Reached.
+- Ship recipes with other conditions (a quest stage, a perk) stay Maybe, as before.
+- The about 20 cells the engine loads by name or keyword still show as not used. No starting point was added for them, because neither the plugin data, the game exe nor the official scripts name any of them (RESULTS.md lists them).
+- `scan --plugin` still treats a mod's own ship recipes gated by an official `VendorSM_` keyword as Maybe, because the official technicians aren't read in that mode.
+- The first run after the update scans the official files again, because the rules and the saved scan's layout changed.
+
+### Rename
+
+- The `sfcutcheck.cmd` alias that 0.1.9 shipped is gone: run `sf-cut-check.exe`. The old `SFCUTCHECK_CACHE_DIR` environment variable still works in 0.2.0, which is the last release that reads it; use `SF_CUT_CHECK_CACHE_DIR`.
+
+### Fixes
+
+- The saved scan of the official files now lists the official records whose links or cell fields Mutagen couldn't read, so a `scan --plugin` run gives them CannotCheck, the same verdict as a full scan. Before, they took the tier saved for them. The saved file has a format version in its name, so a 0.1.9 file is never misread: it's simply rebuilt. A line the reader doesn't know also makes it scan again.
+- README "Limits" now says how a relative `SF_CUT_CHECK_CACHE_DIR` is used (as given, from the current folder).
+- AGENTS.md gives the saved scan's real size (about 700,000 lines, about 22 MB).
+
 ## 0.1.9 (2026-11-20)
 
 ### What's new

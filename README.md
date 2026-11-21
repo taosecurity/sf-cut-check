@@ -39,22 +39,23 @@ A full scan of the Steam version (November 2026), trimmed (`...` marks lines lef
         root rule story-manager      (Strong)       20  a story manager event node (the game runs these on events)
         root rule world              (Strong)      554  a worldspace that isn't developer content
         ...
+        root rule ship-technician    (Strong)      558  a ship builder recipe a reached ship technician offers (its only conditions are a VendorSM_ keyword the technician carries, and maybe the player's level)
 
     all records by verdict:
-        Reached        6,861,715
-        Maybe            131,576
+        Reached        6,970,818
+        Maybe             22,473
         DevOnly          126,675
         Orphaned         488,432
         Unreferenced      51,209
 
-    reported (not Reached, content types only): 25,020
+    reported (not Reached, content types only): 23,316
         type                            Maybe  DevOnly  Orphaned    Unref  Cannot
-        ConstructibleObject             3,398        0         0        0       0
-        Static                            121      223       301    2,583       0
-        PackIn                            813      109       346    1,896       0
+        Static                            107      223       301    2,583       0
+        ConstructibleObject             2,840        0         0        0       0
+        PackIn                            326      109       346    1,896       0
         Npc                                56        9       715      478       0
         ...
-        ... and 105 more types (5,354 records): see report.html
+        ... and 105 more types (5,330 records): see report.html
 
     reports:
         ...\out\scan\report.csv
@@ -71,14 +72,14 @@ And checking one mod, the second time (the official scan is saved after the firs
     RESULT: MyMod.esm adds 28 records, and the game reaches all of them. 12 are reached only through a recipe,
     research project or condition check, so they're marked Maybe. None is reached only from test cells.
 
-**New name in 0.1.9.** The tool was called `sfcutcheck` up to 0.1.8. For this release only, the zip also holds a
-small `sfcutcheck.cmd` that runs `sf-cut-check.exe` with the same arguments, so old scripts keep working.
+**New name since 0.1.9.** The tool was called `sfcutcheck` up to 0.1.8. The `sfcutcheck.cmd` alias that 0.1.9
+shipped is gone in 0.2.0, so scripts must run `sf-cut-check.exe`.
 
 ## Install
 
 **Stand-alone exe (Windows 10 or 11, x64):**
 
-1. Download `sf-cut-check-0.1.9-win-x64.zip` and its `.sha256` file from the
+1. Download `sf-cut-check-0.2.0-win-x64.zip` and its `.sha256` file from the
    [releases page](https://github.com/taosecurity/sf-cut-check/releases).
 2. Right-click the zip, choose **Extract All...**, and pick a folder, for example `C:\Tools\sf-cut-check`.
 3. Open a command prompt in that folder: open the folder in File Explorer, click the address bar at the top, type
@@ -92,7 +93,7 @@ Nothing else is needed: .NET is built into the exe.
 To check that the zip is the one that was published, run this in the folder you downloaded it to, and compare the
 hash it prints with the one in the `.sha256` file:
 
-    certutil -hashfile sf-cut-check-0.1.9-win-x64.zip SHA256
+    certutil -hashfile sf-cut-check-0.2.0-win-x64.zip SHA256
 
 **The exe isn't code-signed.** The first time you run it, Windows SmartScreen may show "Windows protected your PC".
 Click **More info**, then **Run anyway**. Some antivirus tools are also wary of unsigned single-file .NET programs,
@@ -207,7 +208,8 @@ and saves the result. Later runs, for any mod, read only your mod and its master
 The console says which happened. The saved scan is used only while your official files are unchanged: after a
 Starfield update, or when you add or remove a Creation, the next run scans again by itself. `--no-cache` forces a
 fresh scan, and a plain `sf-cut-check scan` also saves it. The saved scan lives in `%LOCALAPPDATA%\sf-cut-check`, or
-in the folder named by the `SF_CUT_CHECK_CACHE_DIR` environment variable. Up to 0.1.8 it was in
+in the folder named by the `SF_CUT_CHECK_CACHE_DIR` environment variable (the old name `SFCUTCHECK_CACHE_DIR` still
+works in 0.2.0, its last release). Up to 0.1.8 it was in
 `%LOCALAPPDATA%\sfcutcheck` (the old name), which can be deleted.
 
 ### why
@@ -244,7 +246,7 @@ Maybe and DevOnly rows). `--word` matches whole words only (`--word cut` finds `
 Here it is with German names and only three rows, trimmed:
 
     > sf-cut-check find Supernova --language de --max 3
-    sf-cut-check 0.1.9 by Richard Bejtlich - GPL-3.0 - https://github.com/taosecurity/sf-cut-check
+    sf-cut-check 0.2.0 by Richard Bejtlich - GPL-3.0 - https://github.com/taosecurity/sf-cut-check
     reading 18 plugins from C:\Program Files (x86)\Steam\steamapps\common\Starfield\Data (about 2 minutes for the whole official set)...
     ...
       note: some in-game names stay in English, because these plugins have no German text for them: Starfield.esm (414), ShatteredSpace.esm (5), SFBGS003.esm (1), SFBGS004.esm (1), sfta05.esm (1)
@@ -311,6 +313,10 @@ it can't find). Every error message says what to change.
   still counts as used.
 - It reads plugins with Mutagen.Bethesda.Starfield 0.54.4. A handful of official records can't be read (they show as
   CannotCheck or are left out of the walk). [MUTAGEN-GAPS.md](MUTAGEN-GAPS.md) lists them.
+- **The saved scan's folder can be relative.** When `SF_CUT_CHECK_CACHE_DIR` holds a relative path, it's used as
+  given, so it depends on the folder you run the tool from. With no `%LOCALAPPDATA%` (for example Linux with no
+  `HOME`) and no cache variable, the saved scan goes to an `sf-cut-check` folder inside the current folder. Set the
+  variable to a full path to avoid both.
 - Starfield only.
 
 ## Found a mistake?

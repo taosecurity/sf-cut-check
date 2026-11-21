@@ -10,7 +10,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>SfCutCheck</RootNamespace>
     <AssemblyName>sf-cut-check</AssemblyName>
-    <Version>0.1.9</Version>
+    <Version>0.2.0</Version>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <ServerGarbageCollection>false</ServerGarbageCollection>
     <!-- Shown in the exe's file properties (Details tab). -->

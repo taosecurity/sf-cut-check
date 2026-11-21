@@ -42,4 +42,18 @@ public sealed class DocsTests
         Assert.Contains($"sf-cut-check {version}", RepoFile("AGENTS.md"));
         Assert.Contains($"sf-cut-check-{version}-win-x64.zip", RepoFile("README.md"));
     }
+
+    /// <summary>0.2.0 dropped the sfcutcheck.cmd alias: the docs may say it's gone, but never tell anyone to run it.</summary>
+    [Fact]
+    public void DocsDontOfferTheOldAlias()
+    {
+        foreach (var name in new[] { "README.md", "AGENTS.md" })
+        {
+            var text = RepoFile(name);
+            Assert.DoesNotContain("sfcutcheck.cmd --", text);
+            Assert.DoesNotContain("keep working", text);
+            Assert.Contains("gone in 0.2.0", text);
+        }
+        Assert.DoesNotContain("sfcutcheck.cmd", RepoFile(Path.Combine("tools", "make_release.py")));
+    }
 }

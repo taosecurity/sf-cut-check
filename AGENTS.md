@@ -1,7 +1,7 @@
 # sf-cut-check: instructions for AI assistants
 
 These steps are for an AI assistant (or anyone) helping a Starfield player or mod author use sf-cut-check. Every
-command here was run once on sf-cut-check 0.1.9 before release. The [README](README.md) has the full description.
+command here was run once on sf-cut-check 0.2.0 before release. The [README](README.md) has the full description.
 
 ## 1. What it is for
 
@@ -30,21 +30,20 @@ Don't use it:
 
 ## 3. Install
 
-Pick one. Files come from https://github.com/taosecurity/sf-cut-check/releases (version 0.1.9 shown here).
+Pick one. Files come from https://github.com/taosecurity/sf-cut-check/releases (version 0.2.0 shown here).
 
-1. **Stand-alone exe (Windows):** download `sf-cut-check-0.1.9-win-x64.zip` and its `.sha256` file, check the checksum,
+1. **Stand-alone exe (Windows):** download `sf-cut-check-0.2.0-win-x64.zip` and its `.sha256` file, check the checksum,
    and unzip it:
 
-       certutil -hashfile sf-cut-check-0.1.9-win-x64.zip SHA256
+       certutil -hashfile sf-cut-check-0.2.0-win-x64.zip SHA256
        mkdir C:\Tools\sf-cut-check
-       tar -xf sf-cut-check-0.1.9-win-x64.zip -C C:\Tools\sf-cut-check
+       tar -xf sf-cut-check-0.2.0-win-x64.zip -C C:\Tools\sf-cut-check
 
-   Compare the printed hash with the one in `sf-cut-check-0.1.9-win-x64.zip.sha256`. The program is then
+   Compare the printed hash with the one in `sf-cut-check-0.2.0-win-x64.zip.sha256`. The program is then
    `C:\Tools\sf-cut-check\sf-cut-check.exe`.
 
-   The tool was called `sfcutcheck` up to 0.1.8. For 0.1.9 only, the zip also holds `sfcutcheck.cmd`, which runs
-   `sf-cut-check.exe` with the same arguments and prints one line on stderr saying the name changed. Use
-   `sf-cut-check.exe` in anything new.
+   The tool was called `sfcutcheck` up to 0.1.8. The `sfcutcheck.cmd` alias that 0.1.9 shipped is gone in 0.2.0:
+   always run `sf-cut-check.exe`.
 
    The exe isn't code-signed, so the first run may show Windows SmartScreen's "Windows protected your PC"
    (More info, then Run anyway). Tell the user that's expected for an unsigned download, and that the matching
@@ -64,7 +63,7 @@ Pick one. Files come from https://github.com/taosecurity/sf-cut-check/releases (
 
     sf-cut-check --version
 
-Its first line is `sf-cut-check 0.1.9 by Richard Bejtlich - GPL-3.0 - https://github.com/taosecurity/sf-cut-check`
+Its first line is `sf-cut-check 0.2.0 by Richard Bejtlich - GPL-3.0 - https://github.com/taosecurity/sf-cut-check`
 (two credit lines follow). Every other command prints that same first line on stderr. Then run the first real
 command (step 5.1) to prove it can read the game.
 
@@ -164,8 +163,8 @@ folder if it doesn't exist.
     `ptbr`, `zhhans`, the codes in the game's string file names, or Mutagen's names such as `German`). A plugin with
     no text in it keeps English names. It changes names only, never verdicts.
 - **The saved scan of the official files:** `%LOCALAPPDATA%\sf-cut-check\official-<key>.txt` (or the folder in the
-  `SF_CUT_CHECK_CACHE_DIR` environment variable; the old name `SFCUTCHECK_CACHE_DIR` still works). Up to 0.1.8 it was
-  in `%LOCALAPPDATA%\sfcutcheck`, which can be deleted. It holds about 800,000 lines (FormID and tier, about 25 MB). It's safe to delete,
+  `SF_CUT_CHECK_CACHE_DIR` environment variable; the old name `SFCUTCHECK_CACHE_DIR` still works in 0.2.0, its last release). Up to 0.1.8 it was
+  in `%LOCALAPPDATA%\sfcutcheck`, which can be deleted. It holds about 700,000 lines (FormID and tier, about 22 MB). It's safe to delete,
   and it's rebuilt when the official files' sizes or dates change.
 
 ## 7. Outputs

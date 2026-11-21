@@ -59,25 +59,61 @@ public sealed class Walk
                         Pred[target] = from;
                         queue.Enqueue(target);
                     }
-            while (queue.Count > 0)
+            do
             {
-                var a = queue.Dequeue();
-                for (var e = outStart[a]; e < outStart[a + 1]; e++)
+                while (queue.Count > 0)
                 {
-                    var b = outTo[e];
-                    if (TierOf[b] != Tier.None) continue;
-                    if (tier == Tier.Strong && outKind[e] == (byte)LinkKind.Checks && checkStops[b])
+                    var a = queue.Dequeue();
+                    for (var e = outStart[a]; e < outStart[a + 1]; e++)
                     {
-                        checkedFromStrong.Add((b, a));
-                        continue;
+                        var b = outTo[e];
+                        if (TierOf[b] != Tier.None) continue;
+                        if (tier == Tier.Strong && outKind[e] == (byte)LinkKind.Checks && checkStops[b])
+                        {
+                            checkedFromStrong.Add((b, a));
+                            continue;
+                        }
+                        TierOf[b] = tier;
+                        Pred[b] = a;
+                        queue.Enqueue(b);
                     }
-                    TierOf[b] = tier;
-                    Pred[b] = a;
-                    queue.Enqueue(b);
                 }
+                // Rule ship-technician (0.2.0): once the strong walk stops, a ship builder recipe whose keyword a
+                // reached technician carries becomes a strong root, and the walk goes on from it. Repeat until no
+                // more recipes open up (a recipe can make a module that leads to another technician).
+                if (tier == Tier.Strong) PromoteTechnicianRecipes(queue);
+            } while (queue.Count > 0);
+        }
+        if (ix.TechnicianGates.Count > 0)
+            Log.Write($"root rule {Rules.ShipTechnician.Name}: {TechnicianRoots:N0} roots (ship builder recipes a reached technician offers, " +
+                      $"of {ix.TechnicianGates.Count:N0} gated only by a technician keyword)");
+    }
+
+    /// <summary>How many recipes rule ship-technician made strong roots.</summary>
+    public int TechnicianRoots { get; private set; }
+
+    void PromoteTechnicianRecipes(Queue<int> queue)
+    {
+        foreach (var (recipe, keyword) in Index.TechnicianGates)
+        {
+            if (TierOf[recipe] != Tier.None) continue;
+            // A technician is an NPC whose own record carries the keyword (not one that only tests it).
+            for (var e = inStart[keyword]; e < inStart[keyword + 1]; e++)
+            {
+                var npc = inFrom[e];
+                if (inKind[e] == (byte)LinkKind.Checks || TierOf[npc] != Tier.Strong || Index.TypeOf(npc) != "Npc") continue;
+                TierOf[recipe] = Tier.Strong;
+                RootOf[recipe] = Rules.ShipTechnician;
+                Pred[recipe] = npc;   // `why` shows the technician that offers it
+                TechnicianRoots++;
+                queue.Enqueue(recipe);
+                break;
             }
         }
     }
+
+    /// <summary>Whether b was reached from a through rule ship-technician (a offers b), not through a link.</summary>
+    public bool Offers(int a, int b) => RootOf[b] == Rules.ShipTechnician && Pred[b] == a;
 
     static (int[] start, int[] to, byte[] kind) Csr(int n, List<int> from, List<int> to, List<LinkKind> kind)
     {

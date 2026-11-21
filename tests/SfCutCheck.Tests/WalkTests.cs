@@ -168,6 +168,55 @@ public sealed class WalkTests : IDisposable
         quest.VirtualMachineAdapter.Scripts[0].Properties.Add(new ScriptObjectProperty { Name = "List", Object = scriptList.ToLink<IStarfieldMajorRecordGetter>() });
         mod.Cells.Add(new CellBlock { SubBlocks = new ExtendedList<CellSubBlock> { new CellSubBlock { Cells = new ExtendedList<Cell> { cell, devCell, behind, lost, byLocation, shipCell, selfOnly } } } });
 
+        // 0.2.0, rule ship-technician: ship builder recipes gated only by a technician's vendor keyword.
+        //   SCT_Technician (an NPC the quest names) carries VendorSM_SctParts; SCT_TechnicianLost (nothing names it)
+        //   carries VendorSM_SctLost; the quest only tests VendorSM_SctChecked in a condition.
+        var shipBench = mod.Keywords.AddNew(Rules.ShipBuilderWorkbench);
+        var otherBench = mod.Keywords.AddNew("SCT_OtherWorkbench");
+        var kwParts = mod.Keywords.AddNew("VendorSM_SctParts");
+        var kwLost = mod.Keywords.AddNew("VendorSM_SctLost");
+        var kwChecked = mod.Keywords.AddNew("VendorSM_SctChecked");
+        var kwPlain = mod.Keywords.AddNew("SCT_NotAVendorKeyword");
+        Npc Tech(string edid, params Keyword[] kws)
+        {
+            var n = mod.Npcs.AddNew(edid);
+            n.Keywords = new ExtendedList<IFormLinkGetter<IKeywordGetter>>(kws.Select(k => (IFormLinkGetter<IKeywordGetter>)k.ToLink<IKeywordGetter>()));
+            keys[edid] = n.FormKey;
+            return n;
+        }
+        var tech = Tech("SCT_Technician", kwParts, kwPlain);
+        Tech("SCT_TechnicianLost", kwLost);
+        // VendorSM_SctChecked is only tested by the quest's conditions: no NPC carries it.
+        var checkerCond = new HasKeywordConditionData { RunOnType = Condition.RunOnType.Subject };
+        checkerCond.FirstParameter.Link.SetTo(kwChecked.FormKey);
+        quest.DialogConditions.Add(new ConditionFloat { Data = checkerCond, ComparisonValue = 1 });
+        quest.VirtualMachineAdapter.Scripts[0].Properties.Add(new ScriptObjectProperty { Name = "Tech", Object = tech.ToLink<IStarfieldMajorRecordGetter>() });
+        Condition HasKw(Keyword k, bool or = false)
+        {
+            var d = new HasKeywordConditionData { RunOnType = Condition.RunOnType.Subject };
+            d.FirstParameter.Link.SetTo(k.FormKey);
+            return new ConditionFloat { Data = d, CompareOperator = CompareOperator.EqualTo, ComparisonValue = 1, Flags = or ? Condition.Flag.OR : 0 };
+        }
+        void ShipRecipe(string edid, Keyword bench, params Condition[] conds)
+        {
+            var r = mod.ConstructibleObjects.AddNew(edid);
+            r.WorkbenchKeyword.SetTo(bench.FormKey);
+            r.CreatedObject.SetTo(W(edid + "_Module").FormKey);
+            r.Conditions.AddRange(conds);
+            keys[edid] = r.FormKey;
+        }
+        ShipRecipe("SCT_ShipRecipe", shipBench, HasKw(kwParts));                      // Reached
+        ShipRecipe("SCT_ShipRecipeLost", shipBench, HasKw(kwLost));                   // Maybe: its technician isn't reached
+        ShipRecipe("SCT_ShipRecipeChecked", shipBench, HasKw(kwChecked));             // Maybe: the NPC only tests the keyword
+        ShipRecipe("SCT_ShipRecipePlainKeyword", shipBench, HasKw(kwPlain));          // Maybe: not a VendorSM_ keyword
+        ShipRecipe("SCT_ShipRecipeOtherBench", otherBench, HasKw(kwParts));           // Maybe: not the ship builder
+        ShipRecipe("SCT_ShipRecipeNoConditions", shipBench);                          // Maybe: no technician gate
+        var extra = new GetIsIDConditionData();
+        extra.FirstParameter.Link.SetTo(tech.FormKey);
+        ShipRecipe("SCT_ShipRecipeMoreConditions", shipBench, HasKw(kwParts), new ConditionFloat { Data = extra, ComparisonValue = 1 });  // Maybe
+        ShipRecipe("SCT_ShipRecipeOr", shipBench, HasKw(kwParts, or: true), HasKw(kwLost));   // Maybe: OR isn't the simple shape
+        ShipRecipe("SCT_ShipRecipeTwoKeywords", shipBench, HasKw(kwParts), HasKw(kwLost));    // Maybe: two keywords
+
         using (var g = new GameData(dir)) PluginWriter.Write(mod, dir, g, new WriteOptions { GapCheck = false, FixEffects = false });
         var index = RefIndex.Build(dir, [PluginName], new HashSet<string>(), _ => { });
         walk = new Walk(index);
@@ -246,6 +295,35 @@ public sealed class WalkTests : IDisposable
         Assert.Same(Rules.CheckedOnly, walk.ReasonOf(id));
         Assert.Equal((Id("SCT_ListChecked"), Id("SCT_StartQuest")), walk.CheckedBy(id));
         Assert.Equal($"via checked-only: {D("SCT_ListChecked")}, checked by {D("SCT_StartQuest")}", walk.ReasonText(id));
+    }
+
+    [Theory]
+    [InlineData("SCT_Technician", Verdict.Reached)]
+    [InlineData("SCT_ShipRecipe", Verdict.Reached)]
+    [InlineData("SCT_ShipRecipe_Module", Verdict.Reached)]
+    [InlineData("SCT_ShipRecipeLost", Verdict.Maybe)]
+    [InlineData("SCT_ShipRecipeLost_Module", Verdict.Maybe)]
+    [InlineData("SCT_ShipRecipeChecked", Verdict.Maybe)]
+    [InlineData("SCT_ShipRecipePlainKeyword", Verdict.Maybe)]
+    [InlineData("SCT_ShipRecipeOtherBench", Verdict.Maybe)]
+    [InlineData("SCT_ShipRecipeNoConditions", Verdict.Maybe)]
+    [InlineData("SCT_ShipRecipeMoreConditions", Verdict.Maybe)]
+    [InlineData("SCT_ShipRecipeOr", Verdict.Maybe)]
+    [InlineData("SCT_ShipRecipeTwoKeywords", Verdict.Maybe)]
+    public void ShipTechnicianRecipes(string edid, Verdict expected) => Assert.Equal(expected, V(edid));
+
+    [Fact]
+    public void ShipTechnicianRuleNamesTheTechnician()
+    {
+        var recipe = Id("SCT_ShipRecipe");
+        Assert.Equal(Rules.ShipTechnician, walk.RootOf[recipe]);
+        Assert.Equal(Id("SCT_Technician"), walk.Pred[recipe]);
+        Assert.True(walk.Offers(Id("SCT_Technician"), recipe));
+        Assert.Equal(Rules.ShipTechnician, walk.ReasonOf(Id("SCT_ShipRecipe_Module")));
+        Assert.Equal(1, walk.TechnicianRoots);
+        Assert.Equal(1, walk.Index.TechnicianGates.Count(g => g.Recipe == recipe));
+        // Gated recipes found: the ship builder ones with one VendorSM_ keyword (Parts, Lost, Checked).
+        Assert.Equal(3, walk.Index.TechnicianGates.Count);
     }
 
     [Fact]

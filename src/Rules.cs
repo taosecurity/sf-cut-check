@@ -27,6 +27,14 @@ public static class Rules
     public static readonly RootRule Player = new("player", Tier.Strong, "the player character or the player reference");
     public static readonly RootRule GameplayOptions = new("gameplay-options", Tier.Strong, "a Gameplay Options group (the game's Gameplay Options menu lists every group)");
     public static readonly RootRule GameSettings = new("game-setting", Tier.Strong, "a game setting (the engine reads these by name)");
+    // 0.2.0 (user's decision, 2026-11-20): a ship builder recipe whose only conditions are one ship technician vendor
+    // keyword (VendorSM_*) on the subject, with or without a player-level gate, is offered by every technician whose
+    // record carries that keyword. The walk makes it a strong root once such a technician is reached (Walk). The data
+    // never links a technician to the ship builder (the game opens it from ship services dialogue), so this rule
+    // supplies that link. Proof: NOTES "0.2.0 relay", step 2.
+    public static readonly RootRule ShipTechnician = new("ship-technician", Tier.Strong, "a ship builder recipe a reached ship technician offers (its only conditions are a VendorSM_ keyword the technician carries, and maybe the player's level)");
+    public const string ShipBuilderWorkbench = "WorkbenchShipBuildingKeyword";
+    public const string TechnicianKeywordPrefix = "VendorSM_";
     public static readonly RootRule EnginePicked = new("engine-picked", Tier.Weak, "a record the engine picks by its conditions or keywords: the top of an idle animation or camera tree, a load screen, a sound or WWise keyword mapping, a movement type, a challenge, an affinity event, a photo mode feature");
     public static readonly RootRule Recipe = new("recipe", Tier.Weak, "a crafting, building or modding recipe (available only if its workbench and conditions allow)");
     public static readonly RootRule Research = new("research", Tier.Weak, "a research project (available only if its conditions allow)");
@@ -39,7 +47,7 @@ public static class Rules
     public static readonly RootRule DevWorld = new("dev-world", Tier.Dev, "a worldspace or cell whose EditorID marks it as test, debug or cut content");
 
     public static readonly RootRule[] All =
-        [StartGameQuest, StoryManager, World, DefaultObjects, Galaxy, Player, GameplayOptions, GameSettings, EnginePicked, Recipe, Research, CheckedOnly, DevWorld];
+        [StartGameQuest, StoryManager, World, DefaultObjects, Galaxy, Player, GameplayOptions, GameSettings, ShipTechnician, EnginePicked, Recipe, Research, CheckedOnly, DevWorld];
 
     /// <summary>The root rule a record meets by itself (worldspaces and cells are decided after the index is built).</summary>
     public static RootRule? RootOf(IMajorRecordGetter r) => r switch

@@ -78,6 +78,51 @@ public sealed class RefIndex
     // A cell's linked references (Cell.LinkedReferences): a ship's instance cell names its placed ship this way.
     readonly List<(int Cell, int Reference)> cellLinkedRefs = new();
     public int InteriorLinkedRefLinks;
+    // Ship builder recipe gates (0.2.0, rule ship-technician): per recipe, its workbench keyword and the one vendor
+    // keyword its conditions test, from the last version of the recipe read (-1 when that version's conditions have
+    // another shape). Resolved by EditorID after every plugin is read, into TechnicianGates.
+    readonly Dictionary<int, (int Workbench, int Keyword)> recipeGates = new();
+    /// <summary>Ship builder recipes whose only conditions are one VendorSM_ keyword (and maybe a player-level gate),
+    /// with that keyword. The walk makes each one a strong root once a reached NPC carries the keyword.</summary>
+    public readonly List<(int Recipe, int Keyword)> TechnicianGates = new();
+    static readonly FormKey PlayerRefKey = FormKey.Factory("000014:Starfield.esm");
+
+    /// <summary>The one keyword a recipe's conditions test, when every condition is either "HasKeyword K == 1" on the
+    /// subject or "GetLevel >= N" on the player reference, all joined by AND and with only one keyword. Null otherwise.
+    /// Whether the keyword is a technician's (VendorSM_) and the workbench the ship builder is checked later, by
+    /// EditorID.</summary>
+    public static FormKey? TechnicianKeyword(IConstructibleObjectGetter c)
+    {
+        var conds = c.Conditions;
+        if (conds == null || conds.Count == 0) return null;
+        FormKey? kw = null;
+        foreach (var cd in conds)
+        {
+            if (cd.Flags.HasFlag(Condition.Flag.OR)) return null;
+            var d = cd.Data;
+            var value = (cd as IConditionFloatGetter)?.ComparisonValue;
+            if (d is IHasKeywordConditionDataGetter hk && d.RunOnType == Condition.RunOnType.Subject
+                && cd.CompareOperator == CompareOperator.EqualTo && value == 1 && !hk.FirstParameter.Link.IsNull)
+            {
+                if (kw is { } k && k != hk.FirstParameter.Link.FormKey) return null;
+                kw = hk.FirstParameter.Link.FormKey;
+            }
+            else if (d is IGetLevelConditionDataGetter && d.RunOnType == Condition.RunOnType.Reference
+                     && d.Reference.FormKey == PlayerRefKey && cd.CompareOperator == CompareOperator.GreaterThanOrEqualTo && value != null) { }
+            else return null;
+        }
+        return kw;
+    }
+
+    void ResolveTechnicianGates()
+    {
+        foreach (var (recipe, (wb, kw)) in recipeGates)
+            if (kw >= 0 && string.Equals(EditorIdOf(wb), Rules.ShipBuilderWorkbench, StringComparison.OrdinalIgnoreCase)
+                && EditorIdOf(kw) is { } k && k.StartsWith(Rules.TechnicianKeywordPrefix, StringComparison.OrdinalIgnoreCase))
+                TechnicianGates.Add((recipe, kw));
+        Log.Write($"ship builder recipes gated only by a technician keyword (rule {Rules.ShipTechnician.Name}): {TechnicianGates.Count:N0} " +
+                  $"of {recipeGates.Count:N0} recipes read, using {TechnicianGates.Select(g => g.Keyword).Distinct().Count():N0} keywords");
+    }
     /// <summary>Form lists whose AddToList names another list (0.1.9): each version counts once.</summary>
     public int AddToListLinks;
     public long VersionsRead { get; private set; }
@@ -254,6 +299,17 @@ public sealed class RefIndex
                     catch (Exception e) { ix.NameFailures++; if (ix.NameFailures <= 5) Log.Write($"name of {r.FormKey} ({type}) unreadable: {e.GetType().Name}: {e.Message}"); }
                 }
                 if (Rules.RootOf(r) is { } rule) ix.Roots.Add((self, rule));
+                if (r is IConstructibleObjectGetter cobj)
+                {
+                    // The last version read decides (a later override with other conditions replaces the gate).
+                    try
+                    {
+                        var gate = TechnicianKeyword(cobj);
+                        ix.recipeGates[self] = cobj.WorkbenchKeyword.IsNull || gate == null ? (-1, -1)
+                            : (ix.Id(cobj.WorkbenchKeyword.FormKey), ix.Id(gate.Value));
+                    }
+                    catch (Exception e) { ix.recipeGates[self] = (-1, -1); Log.Write($"conditions of recipe {r.FormKey} unreadable: {e.GetType().Name}: {e.Message}"); }
+                }
                 if (r is ICellGetter cellRec)
                 {
                     // A cell Mutagen can't read must not stop the scan (0.1.9 review): it's marked as failed, so it
@@ -357,6 +413,7 @@ public sealed class RefIndex
         foreach (var k in Rules.PlayerForms)
             if (ix.ids.TryGetValue(k, out var pid) && ix.Defined.Contains(pid)) ix.Roots.Add((pid, Rules.Player));
         ix.AddWorldRoots();
+        ix.ResolveTechnicianGates();
         // A record overridden by the DLC or a creation meets its root rule once per version: count it once (code
         // review finding 4, 2026-11-11). Overrides are still combined: a later version that drops the rule (for
         // example clears a quest's start-game flag) doesn't remove the root. README "Limits" says so.
