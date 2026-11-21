@@ -19,7 +19,9 @@ public sealed class Walk
     readonly int[] outStart, outTo, inStart, inFrom;
     readonly byte[] outKind, inKind;
     public readonly Tier[] TierOf;
-    public readonly int[] Pred;            // the record each one was reached from; -1 for roots and unreached
+    public readonly int[] Pred;            // the record each one was reached from; -1 for unreached and for roots,
+                                           // except checked-only and ship-technician roots, whose Pred is the record
+                                           // that checks or offers them (use RootOf, not Pred == -1, to find roots)
     public readonly RootRule?[] RootOf;    // the rule that made a record a root (roots only)
     readonly int[] containerOf;            // the record directly holding each one ("contains"); -1 if none
 
@@ -234,6 +236,11 @@ public sealed class Walk
         if (CheckedBy(id) is var (chk, by))
             return chk == id ? $"{Rules.CheckedOnly.Name}: checked by {ix.Describe(by)}"
                 : $"via {Rules.CheckedOnly.Name}: {ix.Describe(chk)}, checked by {ix.Describe(by)}";
+        // A ship-technician root's path runs on past the recipe to the technician's own root, so name the recipe and
+        // the technician instead of that root (0.2.0 review: the report pointed at an unrelated cell or quest).
+        if (NearestRoot(id) is var nr && nr >= 0 && RootOf[nr] == Rules.ShipTechnician && Pred[nr] >= 0)
+            return nr == id ? $"{Rules.ShipTechnician.Name}: offered by {ix.Describe(Pred[nr])}"
+                : $"via {Rules.ShipTechnician.Name}: {ix.Describe(nr)}, offered by {ix.Describe(Pred[nr])}";
         var p = PathTo(id);
         // Short, so the report's Why column stays readable; the rule's full meaning is in the legend (and the
         // page's hover text). User's screenshot 2026-11-11: the long form squeezed the table.
@@ -241,6 +248,16 @@ public sealed class Walk
         if (VerdictOf(id) == Verdict.CannotCheck)
             return ix.FailedIds.Contains(id) ? "Mutagen couldn't read its links" : "Mutagen couldn't read the cell's location or linked references";
         return VerdictOf(id) == Verdict.Orphaned ? "only records the game never reaches link to it" : "nothing links to it";
+    }
+
+    /// <summary>The nearest record on this record's path back to the root that a rule made a root (the record
+    /// itself if it's one); -1 if it isn't reached.</summary>
+    int NearestRoot(int id)
+    {
+        if (TierOf[id] == Tier.None) return -1;
+        for (var cur = id; cur != -1; cur = Pred[cur])
+            if (RootOf[cur] != null) return cur;
+        return -1;
     }
 
     /// <summary>The path from a root to this record (root first). Empty if it isn't reached.</summary>
