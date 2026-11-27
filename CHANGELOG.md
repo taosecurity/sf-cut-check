@@ -4,7 +4,7 @@
 
 ### What's new
 
-The `RESULT:` line of `scan --plugin` now tells you which records it counted. Until now, a plugin whose only dead records were structure records (placed references, cells, keywords) got "the game reaches all of them", because the run leaves structure records out of its report unless you add `--all-types`. The line now names how many dead records the run left out, and the exit code still follows the records the run reports. Also, `find --word` now matches a run of whole words (so `--word SamCoe` finds `COM_Sam_Coe_Neon01`), and an option given without its value (for example `--types` at the end of the command) stops with a usage message and exit code 2 instead of an error trace.
+The `RESULT:` line of `scan --plugin` now tells you which records it counted. Until now, a plugin whose only dead records were structure records (placed references, cells, keywords) got "the game reaches all of them", because the run leaves structure records out of its report unless you add `--all-types`. The line now names how many dead records the run left out, and the exit code still follows the records the run reports. Also, `find --word` now matches a run of whole words (so `--word SamCoe` finds `COM_Sam_Coe_Neon01`), and an option given without its value (for example `--types` at the end of the command, or `--types` followed by another option) stops with a usage message and exit code 2 instead of an error trace.
 
 ### Example
 
@@ -20,7 +20,7 @@ When the run has left dead structure records out, the same line ends with one mo
 
 - **`scan --plugin` RESULT line.** It named only the records the run reports. It now also names the dead records left out by type (structure records, or types outside `--types`), and says "all of its content records" instead of "all of them" when some were left out. README and AGENTS.md say what the exit code counts.
 - **`find --word`.** It split the search text into words and matched the whole text against single words, so a text such as `SamCoe` never matched. It now matches a run of consecutive whole words, ignores capital letters (`samcoe` finds it too), and treats a run of digits as a word of its own, so `--word Neon02` doesn't find `COM_Sam_Coe_Neon01`.
-- **A missing option value.** `sf-cut-check scan --types` stops with the usage text and exit code 2.
+- **A missing option value.** `sf-cut-check scan --types`, or `--types` followed by another option such as `--all-types`, stops with the usage text and exit code 2.
 
 ## 0.2.0 (2026-11-21)
 

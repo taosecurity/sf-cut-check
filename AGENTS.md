@@ -195,7 +195,7 @@ folder if it doesn't exist.
 - **Exit codes:**
   - 0: done.
   - 1: `why` couldn't find a record, or `scan --plugin` found content records (or the chosen types) nothing reaches.
-  - 2: couldn't run. The message on stderr says what to change: an unknown option, no Starfield.esm in the Data
+  - 2: couldn't run. The message on stderr says what to change: an unknown option, an option given without its value, no Starfield.esm in the Data
     folder, an `--out` or `--log` folder it can't write to, a plugin or master not found, or a `--language` code
     that's unknown or has no string files (the message lists the languages found).
 - **The log:** only with `--log <file>` (written there, with times) or `--verbose` (stderr). It never changes stdout.

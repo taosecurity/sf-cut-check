@@ -300,7 +300,7 @@ the record and link counts, any records the plugin reader failed on, the startin
 written, and the full error if the run stops. Attach it to a bug report.
 
 Exit codes: **0** done; **1** `why` couldn't find a record, or `scan --plugin` found content records nothing reaches (the types chosen with `--types` or `--all-types`, when given); **2**
-couldn't run (an unknown option, no `Starfield.esm` in the Data folder, a folder it can't write to, a plugin or master
+couldn't run (an unknown option, an option given without its value, no `Starfield.esm` in the Data folder, a folder it can't write to, a plugin or master
 it can't find). Every error message says what to change.
 
 ## Limits

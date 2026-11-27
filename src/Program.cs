@@ -74,7 +74,7 @@ int Run()
 {
 for (var i = 1; i < args.Length; i++)
 {
-    string Next() => i + 1 < args.Length ? args[++i] : throw new UsageException($"{args[i]} needs a value");
+    string Next() => Options.Value(args, ref i);
     switch (args[i])
     {
         case "--verbose": Log.ToStderr(); break;
@@ -364,15 +364,12 @@ int Scan(Walk w)
     var dead = 0;
     if (pluginName != null)
     {
-        var added = verdictCounts.Values.Sum();
-        dead = rows.Count(r => r.V is Verdict.Orphaned or Verdict.Unreferenced);
         // Full sentences (user, 2026-11-11). The console line keeps "RESULT:" in front so scripts can find it.
-        var maybe = rows.Count(r => r.V == Verdict.Maybe);
-        var devOnly = rows.Count(r => r.V == Verdict.DevOnly);
         // Dead records the run leaves out by type (structure, or not in --types) are named in the line (0.2.1, C2).
-        var leftOutDead = verdictCounts.GetValueOrDefault(Verdict.Orphaned) + verdictCounts.GetValueOrDefault(Verdict.Unreferenced) - dead;
-        result = ResultText.Build(pluginName, added, dead, leftOutDead, maybe, devOnly, onlyTypes != null);
-        Log.Write($"--plugin result: {added} added, {dead} dead, {leftOutDead} dead left out by type");
+        var res = ResultText.ForPlugin(pluginName, verdictCounts, rows.Select(x => x.V).ToList(), onlyTypes != null);
+        result = res.Text;
+        dead = res.Dead;
+        Log.Write($"--plugin result: {verdictCounts.Values.Sum()} added, {res.Dead} dead, {res.LeftOutDead} dead left out by type, {res.LeftOut} not Reached left out by type");
     }
     var filter = onlyTypes != null ? $"the types {string.Join(", ", onlyTypes)}" : allTypes ? "every record type" : "content record types (structure such as placed references, navmeshes and keywords is left out)";
     // "What was checked" at the top of the report, in full sentences (user's tests 2026-11-11: the reports didn't
