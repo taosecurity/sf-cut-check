@@ -243,7 +243,7 @@ Here is the answer for the Starborn Supernova ammo, without the plugin-reading l
 
 `find` lists records whose EditorID contains some text, with their in-game names and verdicts (and the reason for
 Maybe and DevOnly rows). `--word` matches whole words only (`--word cut` finds `CUT_AmmoMag` but not
-`CutsceneIntro`; it matches a run of whole words, so `--word SamCoe` finds `COM_Sam_Coe_Neon01`), and `--max` sets how many rows it lists for each text.
+`CutsceneIntro`; it matches a run of whole words, so `--word SamCoe` finds `COM_Sam_Coe_Neon01`; digits count as a word of their own, so `--word Neon02` doesn't find it), and `--max` sets how many rows it lists for each text.
 
 Here it is with German names and only three rows, trimmed:
 

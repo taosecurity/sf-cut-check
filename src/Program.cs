@@ -54,7 +54,7 @@ OfficialCache? officialCache = null;
 string? languageArg = null;          // --language <code>: in-game names in this language (en when not given)
 var language = Mutagen.Bethesda.Strings.Language.English;
 try { return Run(); }
-catch (ArgumentException e) when (e.Message.EndsWith(" needs a value", StringComparison.Ordinal))
+catch (UsageException e)
 {
     // An option given without its value (0.2.1, C7): a usage mistake, not a crash.
     Log.Write($"usage error: {e.Message}");
@@ -74,7 +74,7 @@ int Run()
 {
 for (var i = 1; i < args.Length; i++)
 {
-    string Next() => i + 1 < args.Length ? args[++i] : throw new ArgumentException($"{args[i]} needs a value");
+    string Next() => i + 1 < args.Length ? args[++i] : throw new UsageException($"{args[i]} needs a value");
     switch (args[i])
     {
         case "--verbose": Log.ToStderr(); break;
@@ -432,8 +432,14 @@ int Find(Walk w)
     var ix = w.Index;
     foreach (var text in targets)
     {
+        var key = word ? Rules.WordKey(text) : null;   // split once per text, not once per EditorID
+        if (word && key == null)
+        {
+            Log.Write($"find --word: \"{text}\" has no letters or digits");
+            Console.Error.WriteLine($"\"{text}\" has no letters or digits, so --word can't match it.");
+        }
         var hits = ix.EditorIds
-            .Where(kv => word ? Rules.HasWords(kv.Value, text) :kv.Value.Contains(text, StringComparison.OrdinalIgnoreCase))
+            .Where(kv => word ? key != null && Rules.HasWordKey(kv.Value, key) : kv.Value.Contains(text, StringComparison.OrdinalIgnoreCase))
             .Where(kv => onlyTypes == null || onlyTypes.Contains(ix.TypeOf(kv.Key)))
             .Select(kv => (Id: kv.Key, Edid: kv.Value, V: w.VerdictOf(kv.Key)))
             .OrderBy(h => h.V).ThenBy(h => h.Edid, StringComparer.OrdinalIgnoreCase).ToList();

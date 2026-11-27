@@ -119,17 +119,43 @@ public static class Rules
     public static IEnumerable<string> Words(string editorId) =>
         WordSplit.Split(editorId).Where(w => w.Length > 0).Select(w => w.ToLowerInvariant());
 
-    /// <summary>True when the query's words appear in the EditorID as a run of consecutive whole words
-    /// (so "SamCoe" matches COM_Sam_Coe_Neon01, and "sam" matches too). 0.2.1, C5.</summary>
-    public static bool HasWords(string editorId, string query)
+    // find --word splits like Words, but keeps digit runs as words of their own ("Neon01" -> neon, 01), so a
+    // query with digits only matches those digits (0.2.1 code review round 1).
+    static readonly Regex FindWordSplit = new(
+        @"[^A-Za-z0-9]+|(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|(?<=[A-Za-z])(?=[0-9])|(?<=[0-9])(?=[A-Za-z])",
+        RegexOptions.CultureInvariant);
+
+    static IEnumerable<string> FindWords(string s) =>
+        FindWordSplit.Split(s).Where(w => w.Length > 0).Select(w => w.ToLowerInvariant());
+
+    /// <summary>The search key of a find --word text: its words joined in lower case ("SamCoe" and "samcoe" both give
+    /// "samcoe"), or null when the text has no letters or digits. Made once per search text.</summary>
+    public static string? WordKey(string query)
     {
-        var q = Words(query).ToList();
-        if (q.Count == 0) return false;
-        var e = Words(editorId).ToList();
-        for (var i = 0; i + q.Count <= e.Count; i++)
-            if (e.Skip(i).Take(q.Count).SequenceEqual(q)) return true;
+        var key = string.Concat(FindWords(query));
+        return key.Length == 0 ? null : key;
+    }
+
+    /// <summary>True when a run of consecutive whole words in the EditorID, joined, equals the key, so "SamCoe",
+    /// "samcoe" and "Sam_Coe" all match COM_SamCoe_Neon01 and COM_SAMCOE_Neon01, and "sam" matches too, but "Neon02"
+    /// doesn't match Neon01. 0.2.1, C5.</summary>
+    public static bool HasWordKey(string editorId, string key)
+    {
+        var e = FindWords(editorId).ToList();
+        for (var i = 0; i < e.Count; i++)
+        {
+            var len = 0;
+            for (var j = i; j < e.Count && len < key.Length; j++)
+            {
+                if (string.CompareOrdinal(key, len, e[j], 0, e[j].Length) != 0) break;
+                len += e[j].Length;
+                if (len == key.Length) return true;
+            }
+        }
         return false;
     }
+
+    public static bool HasWords(string editorId, string query) => WordKey(query) is { } k && HasWordKey(editorId, k);
 
     /// <summary>The first dev marker word in an EditorID, or null. Also the hint label.</summary>
     public static string? Hint(string? editorId)

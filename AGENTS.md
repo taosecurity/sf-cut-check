@@ -95,7 +95,7 @@ folder if it doesn't exist.
 
    Give a plugin name from the Data folder, or a full path to a plugin anywhere (a build folder). For Mod Organizer 2,
    give the full path and add `--masters-dir "<mod folder>"` for each folder that holds one of its masters. The last
-   line starts `RESULT:`. Exit code 1 means some content records the mod adds (or the types chosen with `--types` or `--all-types`) are Orphaned or Unreferenced; 0 means none. The RESULT line names any dead structure records the run left out.
+   line starts `RESULT:`. Exit code 1 means some content records the mod adds (or the types chosen with `--types` or `--all-types`) are Orphaned or Unreferenced; 0 means none. The RESULT line names any dead records the run left out by type (structure records by default, or the types outside `--types` when it's given).
 
    Tell the user that the official files are scanned too, because a mod's records are usually reached through
    Bethesda's records. The first run takes 2-3 minutes and saves that scan. Later runs for any mod take seconds while

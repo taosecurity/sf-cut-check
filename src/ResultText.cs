@@ -1,5 +1,7 @@
 // The RESULT line of scan --plugin (0.2.1, Round 3 C2): it says which records it counts. The exit code follows the
 // counted records (dead); records the run leaves out (structure types, or types not in --types) are named, not hidden.
+namespace SfCutCheck;
+
 public static class ResultText
 {
     static string P(int n, string one) => $"{n:N0} {one}{(n == 1 ? "" : "s")}";

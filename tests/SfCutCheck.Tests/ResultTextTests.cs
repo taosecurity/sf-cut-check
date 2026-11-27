@@ -47,6 +47,28 @@ public class ResultTextTests
     [InlineData("Coe Neon", false)]   // not consecutive: "convo" sits between them
     [InlineData("Sam_Neon", false)]
     [InlineData("", false)]
+    [InlineData("_", false)]
+    [InlineData("Neon02", false)]     // code review round 1: the digits were dropped, so this matched Neon01
+    [InlineData("02", false)]
+    [InlineData("01", true)]
+    [InlineData("samcoe", true)]      // capital letters don't matter
+    [InlineData("SAMCOE", true)]
+    [InlineData("Neo", false)]        // whole words only
+    [InlineData("Neon0", false)]
     public void WordQuery_MatchesRunsOfWholeWords(string query, bool expected) =>
         Assert.Equal(expected, Rules.HasWords("COM_Companion_SamCoe_Convo_Neon01", query));
+
+    [Theory]
+    [InlineData("SamCoe", true)]
+    [InlineData("samcoe", true)]
+    [InlineData("Sam", false)]        // an all-caps word stays one word
+    public void WordQuery_AllCapsEditorId(string query, bool expected) =>
+        Assert.Equal(expected, Rules.HasWords("SAMCOE_Quest", query));
+
+    [Fact]
+    public void WordKey_IsNullWithoutLettersOrDigits()
+    {
+        Assert.Null(Rules.WordKey("__"));
+        Assert.Equal("samcoe01", Rules.WordKey("Sam_Coe01"));
+    }
 }
