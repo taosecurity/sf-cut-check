@@ -79,7 +79,7 @@ shipped is gone in 0.2.0, so scripts must run `sf-cut-check.exe`.
 
 **Stand-alone exe (Windows 10 or 11, x64):**
 
-1. Download `sf-cut-check-0.2.0-win-x64.zip` and its `.sha256` file from the
+1. Download `sf-cut-check-0.2.1-win-x64.zip` and its `.sha256` file from the
    [releases page](https://github.com/taosecurity/sf-cut-check/releases).
 2. Right-click the zip, choose **Extract All...**, and pick a folder, for example `C:\Tools\sf-cut-check`.
 3. Open a command prompt in that folder: open the folder in File Explorer, click the address bar at the top, type
@@ -93,7 +93,7 @@ Nothing else is needed: .NET is built into the exe.
 To check that the zip is the one that was published, run this in the folder you downloaded it to, and compare the
 hash it prints with the one in the `.sha256` file:
 
-    certutil -hashfile sf-cut-check-0.2.0-win-x64.zip SHA256
+    certutil -hashfile sf-cut-check-0.2.1-win-x64.zip SHA256
 
 **The exe isn't code-signed.** The first time you run it, Windows SmartScreen may show "Windows protected your PC".
 Click **More info**, then **Run anyway**. Some antivirus tools are also wary of unsigned single-file .NET programs,
@@ -197,7 +197,9 @@ writes the reports. `--types` limits the report to some record types (in PowerSh
 ### scan --plugin
 
 `scan --plugin` is for mod authors. It reports only the records your plugin *adds*, ends with a `RESULT:` line, and
-exits with 1 if any of them are Orphaned or Unreferenced, so you can use it in a build script. The second run in
+exits with 1 if any of its content records (or the record types you chose with `--types` or `--all-types`) are Orphaned or
+Unreferenced, so you can use it in a build script. If the run leaves out records that nothing reaches (structure such
+as placed references, or types outside `--types`), the `RESULT:` line names how many. The second run in
 [Example](#example) shows its output.
 
 **The whole game is scanned too, even though you named one plugin.** A mod's records count as used only if the game
@@ -241,12 +243,12 @@ Here is the answer for the Starborn Supernova ammo, without the plugin-reading l
 
 `find` lists records whose EditorID contains some text, with their in-game names and verdicts (and the reason for
 Maybe and DevOnly rows). `--word` matches whole words only (`--word cut` finds `CUT_AmmoMag` but not
-`CutsceneIntro`), and `--max` sets how many rows it lists for each text.
+`CutsceneIntro`; it matches a run of whole words, so `--word SamCoe` finds `COM_Sam_Coe_Neon01`), and `--max` sets how many rows it lists for each text.
 
 Here it is with German names and only three rows, trimmed:
 
     > sf-cut-check find Supernova --language de --max 3
-    sf-cut-check 0.2.0 by Richard Bejtlich - GPL-3.0 - https://github.com/taosecurity/sf-cut-check
+    sf-cut-check 0.2.1 by Richard Bejtlich - GPL-3.0 - https://github.com/taosecurity/sf-cut-check
     reading 18 plugins from C:\Program Files (x86)\Steam\steamapps\common\Starfield\Data (about 2 minutes for the whole official set)...
     ...
       note: some in-game names stay in English, because these plugins have no German text for them: Starfield.esm (414), ShatteredSpace.esm (5), SFBGS003.esm (1), SFBGS004.esm (1), sfta05.esm (1)
@@ -297,7 +299,7 @@ The log records the version and the arguments, which Data folder was used and wh
 the record and link counts, any records the plugin reader failed on, the starting points per rule, the report files
 written, and the full error if the run stops. Attach it to a bug report.
 
-Exit codes: **0** done; **1** `why` couldn't find a record, or `scan --plugin` found records nothing reaches; **2**
+Exit codes: **0** done; **1** `why` couldn't find a record, or `scan --plugin` found content records nothing reaches (the types chosen with `--types` or `--all-types`, when given); **2**
 couldn't run (an unknown option, no `Starfield.esm` in the Data folder, a folder it can't write to, a plugin or master
 it can't find). Every error message says what to change.
 

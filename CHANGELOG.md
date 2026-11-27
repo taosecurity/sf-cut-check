@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.2.1
+
+### What's new
+
+The `RESULT:` line of `scan --plugin` now tells you which records it counted. Until now, a plugin whose only dead records were structure records (placed references, cells, keywords) got "the game reaches all of them", because the run leaves structure records out of its report unless you add `--all-types`. The line now names how many dead records the run left out, and the exit code still follows the records the run reports. Also, `find --word` now matches a run of whole words (so `--word SamCoe` finds `COM_Sam_Coe_Neon01`), and an option given without its value (for example `--types` at the end of the command) stops with a usage message and exit code 2 instead of an error trace.
+
+### Example
+
+`scan --plugin` on a real Creation (`SFBGS047.esm`, official Steam files, November 2026) ends with this line; the plugin-reading lines that come first are left out:
+
+    > sf-cut-check scan --plugin SFBGS047.esm
+    ...
+    RESULT: SFBGS047.esm adds 40 records, and nothing in the game reaches 4 of them. The reports list them as Orphaned or Unreferenced.
+
+When the run has left dead structure records out, the same line ends with one more sentence, for example: "The run leaves out 3 structure records that nothing in the game reaches (placed references, cells, keywords and the like). Add --all-types to check them."
+
+### Fixes
+
+- **`scan --plugin` RESULT line (C2).** It named only the records the run reports. It now also names the dead records left out by type (structure records, or types outside `--types`), and says "all of its content records" instead of "all of them" when some were left out. README and AGENTS.md say what the exit code counts.
+- **`find --word` (C5).** It split the search text into words and matched the whole text against single words, so a text such as `SamCoe` never matched. It now matches a run of consecutive whole words.
+- **A missing option value (C7).** `sf-cut-check scan --types` stops with the usage text and exit code 2.
+
 ## 0.2.0 (2026-11-21)
 
 ### What's new

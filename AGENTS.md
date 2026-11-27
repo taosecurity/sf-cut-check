@@ -1,7 +1,7 @@
 # sf-cut-check: instructions for AI assistants
 
 These steps are for an AI assistant (or anyone) helping a Starfield player or mod author use sf-cut-check. Every
-command here was run once on sf-cut-check 0.2.0 before release. The [README](README.md) has the full description.
+command here was run once on sf-cut-check 0.2.1 before release. The [README](README.md) has the full description.
 
 ## 1. What it is for
 
@@ -30,16 +30,16 @@ Don't use it:
 
 ## 3. Install
 
-Pick one. Files come from https://github.com/taosecurity/sf-cut-check/releases (version 0.2.0 shown here).
+Pick one. Files come from https://github.com/taosecurity/sf-cut-check/releases (version 0.2.1 shown here).
 
-1. **Stand-alone exe (Windows):** download `sf-cut-check-0.2.0-win-x64.zip` and its `.sha256` file, check the checksum,
+1. **Stand-alone exe (Windows):** download `sf-cut-check-0.2.1-win-x64.zip` and its `.sha256` file, check the checksum,
    and unzip it:
 
-       certutil -hashfile sf-cut-check-0.2.0-win-x64.zip SHA256
+       certutil -hashfile sf-cut-check-0.2.1-win-x64.zip SHA256
        mkdir C:\Tools\sf-cut-check
-       tar -xf sf-cut-check-0.2.0-win-x64.zip -C C:\Tools\sf-cut-check
+       tar -xf sf-cut-check-0.2.1-win-x64.zip -C C:\Tools\sf-cut-check
 
-   Compare the printed hash with the one in `sf-cut-check-0.2.0-win-x64.zip.sha256`. The program is then
+   Compare the printed hash with the one in `sf-cut-check-0.2.1-win-x64.zip.sha256`. The program is then
    `C:\Tools\sf-cut-check\sf-cut-check.exe`.
 
    The tool was called `sfcutcheck` up to 0.1.8. The `sfcutcheck.cmd` alias that 0.1.9 shipped is gone in 0.2.0:
@@ -63,7 +63,7 @@ Pick one. Files come from https://github.com/taosecurity/sf-cut-check/releases (
 
     sf-cut-check --version
 
-Its first line is `sf-cut-check 0.2.0 by Richard Bejtlich - GPL-3.0 - https://github.com/taosecurity/sf-cut-check`
+Its first line is `sf-cut-check 0.2.1 by Richard Bejtlich - GPL-3.0 - https://github.com/taosecurity/sf-cut-check`
 (two credit lines follow). Every other command prints that same first line on stderr. `--version` doesn't
 read the game, so then run any real command (step 5.1, or a `why` from step 5.4) to prove it can find and read the
 game files.
@@ -95,7 +95,7 @@ folder if it doesn't exist.
 
    Give a plugin name from the Data folder, or a full path to a plugin anywhere (a build folder). For Mod Organizer 2,
    give the full path and add `--masters-dir "<mod folder>"` for each folder that holds one of its masters. The last
-   line starts `RESULT:`. Exit code 1 means some records the mod adds are Orphaned or Unreferenced; 0 means none.
+   line starts `RESULT:`. Exit code 1 means some content records the mod adds (or the types chosen with `--types` or `--all-types`) are Orphaned or Unreferenced; 0 means none. The RESULT line names any dead structure records the run left out.
 
    Tell the user that the official files are scanned too, because a mod's records are usually reached through
    Bethesda's records. The first run takes 2-3 minutes and saves that scan. Later runs for any mod take seconds while
@@ -162,7 +162,7 @@ folder if it doesn't exist.
   - `--all-types`: also report structure records (placed references, navmeshes, keywords).
   - `--out <folder>`: where the reports go, `out\scan` under the current folder by default.
   - `--max N`: the most rows `find` lists for each text (shared between the verdicts; default 40).
-  - `--word`: whole-word matching in `find`.
+  - `--word`: whole-word matching in `find` (a run of whole words, so `SamCoe` finds `COM_Sam_Coe_Neon01`).
   - `--skip Type,Type`: leave record types out of the index.
   - `--no-cache`: with `scan --plugin`, scan the official files again instead of using the saved scan.
   - `--language <code>`: the language of the in-game names (default `en`; also `de`, `es`, `fr`, `it`, `ja`, `pl`,
@@ -194,7 +194,7 @@ folder if it doesn't exist.
   by type and verdict, then the report paths. With `--plugin`, a `RESULT:` line comes last.
 - **Exit codes:**
   - 0: done.
-  - 1: `why` couldn't find a record, or `scan --plugin` found records nothing reaches.
+  - 1: `why` couldn't find a record, or `scan --plugin` found content records (or the chosen types) nothing reaches.
   - 2: couldn't run. The message on stderr says what to change: an unknown option, no Starfield.esm in the Data
     folder, an `--out` or `--log` folder it can't write to, a plugin or master not found, or a `--language` code
     that's unknown or has no string files (the message lists the languages found).
