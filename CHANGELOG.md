@@ -19,7 +19,7 @@ When the run has left dead structure records out, the same line ends with one mo
 ### Fixes
 
 - **`scan --plugin` RESULT line.** It named only the records the run reports. It now also names the dead records left out by type (structure records, or types outside `--types`), and says "all of its content records" instead of "all of them" when some were left out. README and AGENTS.md say what the exit code counts.
-- **`find --word`.** It split the search text into words and matched the whole text against single words, so a text such as `SamCoe` never matched. It now matches a run of consecutive whole words, ignores capital letters (`samcoe` finds it too), and treats a run of digits as a word of its own, so `--word Neon02` doesn't find `COM_Sam_Coe_Neon01`.
+- **`find --word`.** It compared the whole search text with each single word of the EditorID, so a text that spans two words, such as `SamCoe` for `COM_Sam_Coe_Neon01`, never matched, and digits were dropped. It now matches a run of consecutive whole words, ignores capital letters (`samcoe` finds it too), and treats a run of digits as a word of its own, so `--word Neon02` doesn't find `COM_Sam_Coe_Neon01`.
 - **A missing option value.** `sf-cut-check scan --types`, or `--types` followed by another option such as `--all-types`, stops with the usage text and exit code 2.
 
 ## 0.2.0 (2026-11-21)
