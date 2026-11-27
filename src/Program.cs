@@ -54,6 +54,13 @@ OfficialCache? officialCache = null;
 string? languageArg = null;          // --language <code>: in-game names in this language (en when not given)
 var language = Mutagen.Bethesda.Strings.Language.English;
 try { return Run(); }
+catch (ArgumentException e) when (e.Message.EndsWith(" needs a value", StringComparison.Ordinal))
+{
+    // An option given without its value (0.2.1, C7): a usage mistake, not a crash.
+    Log.Write($"usage error: {e.Message}");
+    Console.Error.WriteLine($"{e.Message}\n{Usage}");
+    return 2;
+}
 catch (Exception e)
 {
     Log.Write($"stopped: {e}");
@@ -362,15 +369,10 @@ int Scan(Walk w)
         // Full sentences (user, 2026-11-11). The console line keeps "RESULT:" in front so scripts can find it.
         var maybe = rows.Count(r => r.V == Verdict.Maybe);
         var devOnly = rows.Count(r => r.V == Verdict.DevOnly);
-        string Count(int n) => n == 0 ? "None is" : n == 1 ? "1 is" : $"{n:N0} are";
-        result = dead == 0
-            ? $"RESULT: {pluginName} adds {P(added, "record")}, and the game reaches all of them. " +
-              $"{Count(maybe)} reached only through a recipe, research project or condition check" +
-              (maybe == 0 ? ". " : maybe == 1 ? ", so it's marked Maybe. " : ", so they're marked Maybe. ") +
-              $"{Count(devOnly)} reached only from test cells."
-            : $"RESULT: {pluginName} adds {P(added, "record")}, and nothing in the game reaches {dead:N0} of them. " +
-              "The reports list them as Orphaned or Unreferenced.";
-        Log.Write($"--plugin result: {added} added, {dead} dead");
+        // Dead records the run leaves out by type (structure, or not in --types) are named in the line (0.2.1, C2).
+        var leftOutDead = verdictCounts.GetValueOrDefault(Verdict.Orphaned) + verdictCounts.GetValueOrDefault(Verdict.Unreferenced) - dead;
+        result = ResultText.Build(pluginName, added, dead, leftOutDead, maybe, devOnly, onlyTypes != null);
+        Log.Write($"--plugin result: {added} added, {dead} dead, {leftOutDead} dead left out by type");
     }
     var filter = onlyTypes != null ? $"the types {string.Join(", ", onlyTypes)}" : allTypes ? "every record type" : "content record types (structure such as placed references, navmeshes and keywords is left out)";
     // "What was checked" at the top of the report, in full sentences (user's tests 2026-11-11: the reports didn't
@@ -431,7 +433,7 @@ int Find(Walk w)
     foreach (var text in targets)
     {
         var hits = ix.EditorIds
-            .Where(kv => word ? Rules.Words(kv.Value).Contains(text.ToLowerInvariant()) : kv.Value.Contains(text, StringComparison.OrdinalIgnoreCase))
+            .Where(kv => word ? Rules.HasWords(kv.Value, text) :kv.Value.Contains(text, StringComparison.OrdinalIgnoreCase))
             .Where(kv => onlyTypes == null || onlyTypes.Contains(ix.TypeOf(kv.Key)))
             .Select(kv => (Id: kv.Key, Edid: kv.Value, V: w.VerdictOf(kv.Key)))
             .OrderBy(h => h.V).ThenBy(h => h.Edid, StringComparer.OrdinalIgnoreCase).ToList();

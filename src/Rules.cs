@@ -119,6 +119,18 @@ public static class Rules
     public static IEnumerable<string> Words(string editorId) =>
         WordSplit.Split(editorId).Where(w => w.Length > 0).Select(w => w.ToLowerInvariant());
 
+    /// <summary>True when the query's words appear in the EditorID as a run of consecutive whole words
+    /// (so "SamCoe" matches COM_Sam_Coe_Neon01, and "sam" matches too). 0.2.1, C5.</summary>
+    public static bool HasWords(string editorId, string query)
+    {
+        var q = Words(query).ToList();
+        if (q.Count == 0) return false;
+        var e = Words(editorId).ToList();
+        for (var i = 0; i + q.Count <= e.Count; i++)
+            if (e.Skip(i).Take(q.Count).SequenceEqual(q)) return true;
+        return false;
+    }
+
     /// <summary>The first dev marker word in an EditorID, or null. Also the hint label.</summary>
     public static string? Hint(string? editorId)
     {
